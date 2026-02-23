@@ -6,7 +6,7 @@ from pathlib import Path
 import os
 from loguru import logger
 from ratelimit import limits, sleep_and_retry
-from playwright.async_api import async_playwright
+import weasyprint
 
 SEC_ARCHIVE_URL: Final[str] = "https://www.sec.gov/Archives/edgar/data"
 SEC_VIEWER_URL: Final[str] = "https://www.sec.gov/ix?doc=/Archives/edgar/data"
@@ -94,60 +94,46 @@ async def save_filings_as_pdfs(
     email: str,
     max_concurrent: int = 4,
 ) -> list[Path]:
-    """Render each filing's primary .htm document to PDF via a headless browser.
+    """Render each filing's primary .htm document to PDF via WeasyPrint.
 
     Args:
         filings: List of (cik, accession_number, primary_document, output_path) tuples.
         company: Company name for SEC User-Agent header.
         email: Contact e-mail for SEC User-Agent header.
-        max_concurrent: Maximum number of simultaneous browser pages.
+        max_concurrent: Maximum number of simultaneous conversions.
 
     Returns:
         List of Path objects pointing to the saved PDFs (same order as input).
     """
     sem = asyncio.Semaphore(max_concurrent)
-    user_agent = f"{company} {email}"
+    session = _get_session(company, email)
+
+    def _render_pdf(html_content: str, base_url: str, output_path: Path) -> Path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        weasyprint.HTML(string=html_content, base_url=base_url).write_pdf(str(output_path))
+        return output_path
 
     async def _save_one(
         cik: Union[str, int],
         accession_number: Union[str, int],
         primary_document: str,
         output_path: Union[str, Path],
-        context,
     ) -> Path:
         output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
         url = viewer_url(cik, accession_number, primary_document)
         async with sem:
-            logger.info(f"Rendering {url} → {output_path}")
-            page = await context.new_page()
-            try:
-                await page.goto(url, wait_until="networkidle", timeout=120_000)
-                await page.pdf(
-                    path=str(output_path),
-                    format="A4",
-                    print_background=True,
-                )
-            finally:
-                await page.close()
+            logger.info(f"Fetching {url}")
+            response = await asyncio.to_thread(session.get, url)
+            response.raise_for_status()
+            logger.info(f"Rendering → {output_path}")
+            result = await asyncio.to_thread(_render_pdf, response.text, url, output_path)
         logger.info(f"Saved PDF: {output_path}")
-        return output_path
+        return result
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        context = await browser.new_context(
-            user_agent=user_agent,
-            extra_http_headers={"Content-Type": "text/html"},
-        )
-        try:
-            results = await asyncio.gather(
-                *[
-                    _save_one(cik, acc_num, primary_doc, out_path, context)
-                    for cik, acc_num, primary_doc, out_path in filings
-                ]
-            )
-        finally:
-            await context.close()
-            await browser.close()
-
+    results = await asyncio.gather(
+        *[
+            _save_one(cik, acc_num, primary_doc, out_path)
+            for cik, acc_num, primary_doc, out_path in filings
+        ]
+    )
     return list(results)
