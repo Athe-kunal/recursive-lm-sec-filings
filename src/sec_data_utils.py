@@ -1,6 +1,5 @@
 import re
 import asyncio
-import aiohttp
 import requests
 from typing import Final, Union, Optional
 from pathlib import Path
@@ -10,6 +9,7 @@ from ratelimit import limits, sleep_and_retry
 from playwright.async_api import async_playwright
 
 SEC_ARCHIVE_URL: Final[str] = "https://www.sec.gov/Archives/edgar/data"
+SEC_VIEWER_URL: Final[str] = "https://www.sec.gov/ix?doc=/Archives/edgar/data"
 SEC_SEARCH_URL: Final[str] = "http://www.sec.gov/cgi-bin/browse-edgar"
 SEC_SUBMISSIONS_URL = "https://data.sec.gov/submissions"
 
@@ -78,50 +78,26 @@ def get_cik_by_ticker(ticker: str) -> str:
     return str(results[0])
 
 
-async def _get_main_html_url(
-    session: aiohttp.ClientSession,
+def viewer_url(
     cik: Union[str, int],
     accession_number: Union[str, int],
-    user_agent: str,
+    primary_document: str,
 ) -> str:
-    """Fetches the filing index JSON and returns the URL of the primary HTML document."""
+    """Builds the SEC inline XBRL viewer URL for the primary .htm document."""
     acc_no_dashes = _drop_dashes(accession_number)
-    acc_with_dashes = _add_dashes(accession_number)
-    index_url = f"{SEC_ARCHIVE_URL}/{cik}/{acc_no_dashes}/{acc_with_dashes}-index.json"
-    request_headers = {
-        "User-Agent": user_agent,
-        "Content-Type": "text/html",
-    }
-    async with session.get(index_url, headers=request_headers) as response:
-        response.raise_for_status()
-        index_data = await response.json(content_type=None)
-
-    # Prefer the explicitly marked primary document
-    primary_doc = index_data.get("primaryDocument", index_data.get("primary_doc", ""))
-    if primary_doc and re.search(r"\.html?$", primary_doc, re.IGNORECASE):
-        return f"{SEC_ARCHIVE_URL}/{cik}/{acc_no_dashes}/{primary_doc}"
-
-    # Fall back to first document with an .htm/.html extension
-    for doc in index_data.get("documents", []):
-        doc_name = doc.get("document", doc.get("name", ""))
-        if re.search(r"\.html?$", doc_name, re.IGNORECASE):
-            return f"{SEC_ARCHIVE_URL}/{cik}/{acc_no_dashes}/{doc_name}"
-
-    raise ValueError(
-        f"No HTML document found in filing index for accession {accession_number}"
-    )
+    return f"{SEC_VIEWER_URL}/{cik}/{acc_no_dashes}/{primary_document}"
 
 
 async def save_filings_as_pdfs(
-    filings: list[tuple[Union[str, int], Union[str, int], Union[str, Path]]],
+    filings: list[tuple[Union[str, int], Union[str, int], str, Union[str, Path]]],
     company: str,
     email: str,
     max_concurrent: int = 4,
 ) -> list[Path]:
-    """Fetch each filing's primary HTML document and save it as a PDF.
+    """Render each filing's primary .htm document to PDF via a headless browser.
 
     Args:
-        filings: List of (cik, accession_number, output_path) tuples.
+        filings: List of (cik, accession_number, primary_document, output_path) tuples.
         company: Company name for SEC User-Agent header.
         email: Contact e-mail for SEC User-Agent header.
         max_concurrent: Maximum number of simultaneous browser pages.
@@ -135,22 +111,18 @@ async def save_filings_as_pdfs(
     async def _save_one(
         cik: Union[str, int],
         accession_number: Union[str, int],
+        primary_document: str,
         output_path: Union[str, Path],
-        browser,
-        session: aiohttp.ClientSession,
+        context,
     ) -> Path:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
+        url = viewer_url(cik, accession_number, primary_document)
         async with sem:
-            html_url = await _get_main_html_url(session, cik, accession_number, user_agent)
-            logger.info(f"Rendering {html_url} → {output_path}")
-            page = await browser.new_page()
+            logger.info(f"Rendering {url} → {output_path}")
+            page = await context.new_page()
             try:
-                await page.set_extra_http_headers({
-                    "User-Agent": user_agent,
-                    "Content-Type": "text/html",
-                })
-                await page.goto(html_url, wait_until="networkidle", timeout=120_000)
+                await page.goto(url, wait_until="networkidle", timeout=120_000)
                 await page.pdf(
                     path=str(output_path),
                     format="A4",
@@ -161,17 +133,21 @@ async def save_filings_as_pdfs(
         logger.info(f"Saved PDF: {output_path}")
         return output_path
 
-    async with aiohttp.ClientSession() as session:
-        async with async_playwright() as p:
-            browser = await p.chromium.launch()
-            try:
-                results = await asyncio.gather(
-                    *[
-                        _save_one(cik, acc_num, out_path, browser, session)
-                        for cik, acc_num, out_path in filings
-                    ]
-                )
-            finally:
-                await browser.close()
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        context = await browser.new_context(
+            user_agent=user_agent,
+            extra_http_headers={"Content-Type": "text/html"},
+        )
+        try:
+            results = await asyncio.gather(
+                *[
+                    _save_one(cik, acc_num, primary_doc, out_path, context)
+                    for cik, acc_num, primary_doc, out_path in filings
+                ]
+            )
+        finally:
+            await context.close()
+            await browser.close()
 
     return list(results)

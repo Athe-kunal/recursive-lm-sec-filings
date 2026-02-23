@@ -13,6 +13,7 @@ class SecResults(NamedTuple):
     form_name: str
     filing_date: str
     report_date: str
+    primary_document: str
 
 
 def sec_main(
@@ -38,7 +39,8 @@ def sec_main(
 
     url = f"https://data.sec.gov/submissions/CIK{cik}.json"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": f"{company} {email}",
+        "Content-Type": "text/html",
     }
     response = requests.get(url, headers=headers)
 
@@ -54,11 +56,12 @@ def sec_main(
     sec_form_names: list[str] = []
     form_lists: list[SecResults] = []
 
-    for acc_num, form_name, filing_date, report_date in zip(
+    for acc_num, form_name, filing_date, report_date, primary_doc in zip(
         recent_filings["accessionNumber"],
         recent_filings["form"],
         recent_filings["filingDate"],
         recent_filings["reportDate"],
+        recent_filings["primaryDocument"],
         strict=True,
     ):
         if form_name in forms and report_date.startswith(str(year)):
@@ -76,13 +79,14 @@ def sec_main(
                     form_name=display_name,
                     filing_date=filing_date,
                     report_date=report_date,
+                    primary_document=primary_doc,
                 )
             )
             sec_form_names.append(display_name)
 
     output_dir = Path("sec_data") / f"{ticker}-{year}"
     filings_to_save = [
-        (rgld_cik, sr.dashes_acc_num, output_dir / f"{sr.form_name}.pdf")
+        (rgld_cik, sr.dashes_acc_num, sr.primary_document, output_dir / f"{sr.form_name}.pdf")
         for sr in form_lists
     ]
 
