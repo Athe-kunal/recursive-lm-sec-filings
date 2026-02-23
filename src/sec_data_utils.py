@@ -48,7 +48,10 @@ def _get_session(
     session.headers.update(
         {
             "User-Agent": f"{company} {email}",
-            "Content-Type": "text/html",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
         }
     )
     return session
@@ -138,6 +141,7 @@ async def save_filings_as_pdfs(
         output_path = Path(output_path)
         url = document_url(cik, accession_number, primary_document)
         async with sem:
+            await asyncio.sleep(2)
             logger.info(f"Fetching {url}")
             response = await asyncio.to_thread(session.get, url)
             response.raise_for_status()

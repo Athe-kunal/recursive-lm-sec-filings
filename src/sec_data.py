@@ -21,8 +21,8 @@ def sec_main(
     year: str,
     filing_types: list[str] = ["10-K", "10-Q"],
     include_amends: bool = True,
-    company: str = "Unstructured Technologies",
-    email: str = "support@unstructured.io",
+    company: str = "Indiana University Bloomington",
+    email: str = "astmohap@iu.edu",
 ) -> tuple[list[SecResults], list[Path]]:
     cik = get_cik_by_ticker(ticker)
     logger.info(f"For {ticker=} found {cik=}")
@@ -86,7 +86,12 @@ def sec_main(
 
     output_dir = Path("sec_data") / f"{ticker}-{year}"
     filings_to_save = [
-        (rgld_cik, sr.dashes_acc_num, sr.primary_document, output_dir / f"{sr.form_name}.pdf")
+        (
+            rgld_cik,
+            sr.dashes_acc_num,
+            sr.primary_document,
+            output_dir / f"{sr.form_name}.pdf",
+        )
         for sr in form_lists
     ]
 
