@@ -1,12 +1,12 @@
 import re
-import asyncio
+import concurrent.futures
 import requests
+import pdfkit
 from typing import Final, Union, Optional
 from pathlib import Path
 import os
 from loguru import logger
 from ratelimit import limits, sleep_and_retry
-from playwright.async_api import async_playwright
 
 SEC_ARCHIVE_URL: Final[str] = "https://www.sec.gov/Archives/edgar/data"
 SEC_VIEWER_URL: Final[str] = "https://www.sec.gov/ix?doc=/Archives/edgar/data"
@@ -88,66 +88,53 @@ def viewer_url(
     return f"{SEC_VIEWER_URL}/{cik}/{acc_no_dashes}/{primary_document}"
 
 
-async def save_filings_as_pdfs(
+def save_filings_as_pdfs(
     filings: list[tuple[Union[str, int], Union[str, int], str, Union[str, Path]]],
     company: str,
     email: str,
-    max_concurrent: int = 4,
+    max_workers: int = 4,
 ) -> list[Path]:
-    """Render each filing's primary .htm document to PDF via a headless browser.
+    """Render each filing's primary .htm document to PDF via pdfkit/wkhtmltopdf.
 
     Args:
         filings: List of (cik, accession_number, primary_document, output_path) tuples.
         company: Company name for SEC User-Agent header.
         email: Contact e-mail for SEC User-Agent header.
-        max_concurrent: Maximum number of simultaneous browser pages.
+        max_workers: Maximum number of concurrent wkhtmltopdf processes.
 
     Returns:
         List of Path objects pointing to the saved PDFs (same order as input).
     """
-    sem = asyncio.Semaphore(max_concurrent)
     user_agent = f"{company} {email}"
+    pdf_options = {
+        "quiet": "",
+        "custom-header": [("User-Agent", user_agent)],
+        "custom-header-propagation": "",
+        "no-stop-slow-scripts": "",
+        "javascript-delay": 2000,
+        "page-size": "A4",
+        "encoding": "UTF-8",
+    }
 
-    async def _save_one(
+    def _save_one(
         cik: Union[str, int],
         accession_number: Union[str, int],
         primary_document: str,
         output_path: Union[str, Path],
-        context,
     ) -> Path:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         url = viewer_url(cik, accession_number, primary_document)
-        async with sem:
-            logger.info(f"Rendering {url} → {output_path}")
-            page = await context.new_page()
-            try:
-                await page.goto(url, wait_until="networkidle", timeout=120_000)
-                await page.pdf(
-                    path=str(output_path),
-                    format="A4",
-                    print_background=True,
-                )
-            finally:
-                await page.close()
+        logger.info(f"Rendering {url} → {output_path}")
+        pdfkit.from_url(url, str(output_path), options=pdf_options)
         logger.info(f"Saved PDF: {output_path}")
         return output_path
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        context = await browser.new_context(
-            user_agent=user_agent,
-            extra_http_headers={"Content-Type": "text/html"},
-        )
-        try:
-            results = await asyncio.gather(
-                *[
-                    _save_one(cik, acc_num, primary_doc, out_path, context)
-                    for cik, acc_num, primary_doc, out_path in filings
-                ]
-            )
-        finally:
-            await context.close()
-            await browser.close()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(_save_one, cik, acc_num, primary_doc, out_path)
+            for cik, acc_num, primary_doc, out_path in filings
+        ]
+        results = [f.result() for f in futures]
 
-    return list(results)
+    return results

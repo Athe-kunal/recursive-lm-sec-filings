@@ -1,5 +1,4 @@
 from typing import NamedTuple
-import asyncio
 import requests
 from datetime import datetime
 from pathlib import Path
@@ -90,12 +89,10 @@ def sec_main(
         for sr in form_lists
     ]
 
-    pdf_paths = asyncio.run(
-        save_filings_as_pdfs(
-            filings=filings_to_save,
-            company=company,
-            email=email,
-        )
+    pdf_paths = save_filings_as_pdfs(
+        filings=filings_to_save,
+        company=company,
+        email=email,
     )
 
     logger.info(f"Saved {len(pdf_paths)} PDFs to {output_dir}")
