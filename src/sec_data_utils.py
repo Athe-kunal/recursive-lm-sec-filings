@@ -88,6 +88,20 @@ def viewer_url(
     return f"{SEC_VIEWER_URL}/{cik}/{acc_no_dashes}/{primary_document}"
 
 
+def document_url(
+    cik: Union[str, int],
+    accession_number: Union[str, int],
+    primary_document: str,
+) -> str:
+    """Builds the direct archive URL for the primary .htm document.
+
+    Unlike the XBRL viewer URL, this endpoint is accessible to automated
+    clients that supply a valid SEC User-Agent header.
+    """
+    acc_no_dashes = _drop_dashes(accession_number)
+    return f"{SEC_ARCHIVE_URL}/{cik}/{acc_no_dashes}/{primary_document}"
+
+
 async def save_filings_as_pdfs(
     filings: list[tuple[Union[str, int], Union[str, int], str, Union[str, Path]]],
     company: str,
@@ -110,7 +124,9 @@ async def save_filings_as_pdfs(
 
     def _render_pdf(html_content: str, base_url: str, output_path: Path) -> Path:
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        weasyprint.HTML(string=html_content, base_url=base_url).write_pdf(str(output_path))
+        weasyprint.HTML(string=html_content, base_url=base_url).write_pdf(
+            str(output_path)
+        )
         return output_path
 
     async def _save_one(
@@ -120,13 +136,15 @@ async def save_filings_as_pdfs(
         output_path: Union[str, Path],
     ) -> Path:
         output_path = Path(output_path)
-        url = viewer_url(cik, accession_number, primary_document)
+        url = document_url(cik, accession_number, primary_document)
         async with sem:
             logger.info(f"Fetching {url}")
             response = await asyncio.to_thread(session.get, url)
             response.raise_for_status()
             logger.info(f"Rendering → {output_path}")
-            result = await asyncio.to_thread(_render_pdf, response.text, url, output_path)
+            result = await asyncio.to_thread(
+                _render_pdf, response.text, url, output_path
+            )
         logger.info(f"Saved PDF: {output_path}")
         return result
 
