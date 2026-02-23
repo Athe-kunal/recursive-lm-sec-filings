@@ -108,4 +108,4 @@ def sec_main(
 
 
 if __name__ == "__main__":
-    data = sec_main(ticker="AAPL", year="2025")
+    data = sec_main(ticker="GOOG", year="2025")

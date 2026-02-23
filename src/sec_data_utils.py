@@ -141,7 +141,7 @@ async def save_filings_as_pdfs(
         output_path = Path(output_path)
         url = document_url(cik, accession_number, primary_document)
         async with sem:
-            await asyncio.sleep(2)
+            await asyncio.sleep(0.15)
             logger.info(f"Fetching {url}")
             response = await asyncio.to_thread(session.get, url)
             response.raise_for_status()
