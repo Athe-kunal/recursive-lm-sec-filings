@@ -15,7 +15,7 @@ Box = Dict[str, Any]
 # ---------------------------------------------------------------------------
 
 TITLE_LABELS = {"doc_title", "paragraph_title", "figure_title"}
-IGNORED_LABELS = {"footer"}
+IGNORED_LABELS = {"footer", "number", "header"}
 # Text boxes must stay independent – never merged with others
 STANDALONE_LABELS = {"text", "table"}
 
@@ -67,15 +67,14 @@ def filter_footer(boxes: List[Box]) -> List[Box]:
 
 
 # ---------------------------------------------------------------------------
-# Rule 2 – merge overlapping boxes
+# Rule 2a – merge overlapping non-standalone boxes
 # ---------------------------------------------------------------------------
 
 
 def merge_overlapping(boxes: List[Box]) -> List[Box]:
     """
     Iteratively union any pair of boxes that overlap.
-    Text boxes never initiate or participate in overlap merges (rule 4:
-    text must not be merged with other texts or tables).
+    Text and table boxes are standalone and never participate here.
     Repeats until no more merges are possible.
     """
     changed = True
@@ -102,6 +101,52 @@ def merge_overlapping(boxes: List[Box]) -> List[Box]:
                     continue  # text boxes never get absorbed either
                 if _overlap(current, box_j):
                     current = _union(current, box_j)
+                    used[j] = True
+                    changed = True
+
+            merged.append(current)
+            used[i] = True
+
+        boxes = merged
+
+    return boxes
+
+
+# ---------------------------------------------------------------------------
+# Rule 2b – merge overlapping table boxes with each other
+# ---------------------------------------------------------------------------
+
+
+def merge_overlapping_tables(boxes: List[Box]) -> List[Box]:
+    """
+    Iteratively union any pair of 'table' boxes that overlap.
+    Only table-table overlaps are resolved; all other labels are untouched.
+    Repeats until no more merges are possible.
+    """
+    changed = True
+    while changed:
+        changed = False
+        merged: List[Box] = []
+        used = [False] * len(boxes)
+
+        for i, box_i in enumerate(boxes):
+            if used[i]:
+                continue
+            if box_i["label"] != "table":
+                merged.append(box_i)
+                used[i] = True
+                continue
+
+            current = box_i
+            for j in range(i + 1, len(boxes)):
+                if used[j]:
+                    continue
+                box_j = boxes[j]
+                if box_j["label"] != "table":
+                    continue
+                if _overlap(current, box_j):
+                    current = _union(current, box_j)
+                    current["label"] = "table"
                     used[j] = True
                     changed = True
 
@@ -166,6 +211,118 @@ def merge_titles_forward(boxes: List[Box]) -> List[Box]:
 
 
 # ---------------------------------------------------------------------------
+# Rule 4 – merge vertically-adjacent indented text boxes
+# ---------------------------------------------------------------------------
+
+
+def merge_indented_text(
+    boxes: List[Box],
+    x_tol: float = 20.0,
+    y_gap_ratio: float = 1.5,
+) -> List[Box]:
+    """
+    Merge consecutive 'text' boxes that share the same indentation level and
+    sit close together vertically (e.g. a run of bullet-point paragraphs).
+
+    Two adjacent text boxes are merged when ALL of the following hold:
+      - Both have label 'text'.
+      - Their left edges (x1) agree within *x_tol* pixels (same indent column).
+      - The vertical gap between them is at most *y_gap_ratio* × the height of
+        the upper box (prevents merging across large whitespace gaps).
+
+    Non-text boxes are emitted unchanged and break any in-progress text run.
+    """
+    boxes = sorted(boxes, key=lambda b: _coord(b)[1])
+    result: List[Box] = []
+
+    for box in boxes:
+        if box["label"] != "text" or not result or result[-1]["label"] != "text":
+            result.append(box)
+            continue
+
+        prev = result[-1]
+        px1, _py1, _px2, py2 = _coord(prev)
+        cx1, cy1, _cx2, _cy2 = _coord(box)
+
+        same_indent = abs(cx1 - px1) <= x_tol
+        gap_ok = (cy1 - py2) <= y_gap_ratio * (py2 - _py1)
+
+        if same_indent and gap_ok:
+            result[-1] = _union(prev, box)
+            result[-1]["label"] = "text"
+        else:
+            result.append(box)
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Rule 5 – merge narrow text boxes into a wider containing box
+# ---------------------------------------------------------------------------
+
+
+def merge_column_contained(boxes: List[Box]) -> List[Box]:
+    """
+    Merge 'text' boxes that are horizontally contained within the x-span of a
+    previously seen wider text box.
+
+    Algorithm (top-to-bottom):
+      - Only 'text' boxes participate; 'table' and all other labels are emitted
+        unchanged.
+      - Walk boxes sorted by y1 (top to bottom).
+      - Maintain the last emitted text box whose x-span is the widest seen so
+        far (the "column anchor").
+      - A box is *contained* when:  anchor.x1 <= box.x1  AND  box.x2 <= anchor.x2
+        i.e. it fits entirely within the anchor's horizontal range.
+      - Contained boxes are unioned into the anchor (the anchor grows vertically
+        but never shrinks horizontally).
+      - A box that is wider than the current anchor becomes the new anchor.
+      - 'table' boxes are emitted as-is and RESET the column anchor because a
+        table is a structural break in the document flow.
+      - Other non-text boxes (image, formula, etc.) are emitted as-is without
+        resetting the anchor.
+    """
+    boxes = sorted(boxes, key=lambda b: _coord(b)[1])
+    result: List[Box] = []
+    anchor_idx: int | None = None  # index into result of current column anchor
+
+    for box in boxes:
+        if box["label"] == "table":
+            # Tables are structural breaks: pass through and reset the anchor.
+            result.append(box)
+            anchor_idx = None
+            continue
+
+        if box["label"] != "text":
+            result.append(box)
+            continue
+
+        bx1, _by1, bx2, _by2 = _coord(box)
+
+        if anchor_idx is None:
+            result.append(box)
+            anchor_idx = len(result) - 1
+            continue
+
+        anchor = result[anchor_idx]
+        ax1, _ay1, ax2, _ay2 = _coord(anchor)
+
+        if ax1 <= bx1 and bx2 <= ax2:
+            # Contained: absorb into the anchor, keep anchor's x-span intact.
+            merged = _union(anchor, box)
+            merged["coordinate"][0] = ax1  # preserve left edge
+            merged["coordinate"][2] = ax2  # preserve right edge
+            merged["label"] = "text"
+            result[anchor_idx] = merged
+        else:
+            # Wider or offset: emit as a new anchor.
+            result.append(box)
+            anchor_idx = len(result) - 1
+
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Full pipeline
 # ---------------------------------------------------------------------------
 
@@ -173,7 +330,10 @@ def merge_titles_forward(boxes: List[Box]) -> List[Box]:
 def postprocess(boxes: List[Box]) -> List[Box]:
     boxes = filter_footer(boxes)
     boxes = merge_overlapping(boxes)
+    boxes = merge_overlapping_tables(boxes)
     boxes = merge_titles_forward(boxes)
+    boxes = merge_indented_text(boxes)
+    boxes = merge_column_contained(boxes)
     return boxes
 
 
@@ -195,11 +355,21 @@ DEFAULT_COLOR = (128, 128, 128)
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 
 
-def draw_boxes(image_path: str, boxes: List[Box], save_path: str) -> None:
-    """Draw post-processed bounding boxes on the source image and save."""
-    img = cv2.imread(image_path)
+def draw_boxes(
+    image: "str | np.ndarray",
+    boxes: List[Box],
+    save_path: str,
+) -> None:
+    """Draw post-processed bounding boxes on the source image and save.
+
+    ``image`` may be a file path (str) or an already-loaded BGR numpy array.
+    """
+    if isinstance(image, np.ndarray):
+        img = image.copy()
+    else:
+        img = cv2.imread(image)
     if img is None:
-        raise FileNotFoundError(f"Cannot read image: {image_path}")
+        raise FileNotFoundError(f"Cannot read image: {image}")
 
     for box in boxes:
         x1, y1, x2, y2 = [int(v) for v in _coord(box)]
