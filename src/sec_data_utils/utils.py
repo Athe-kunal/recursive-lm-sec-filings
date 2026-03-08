@@ -1,7 +1,8 @@
 import re
 import asyncio
+from concurrent.futures import ProcessPoolExecutor
 import requests
-from typing import Final, NamedTuple, Union, Optional
+from typing import Final, NamedTuple, Optional, Union
 from pathlib import Path
 import os
 from loguru import logger
@@ -114,11 +115,113 @@ class FilingToSave(NamedTuple):
     output_path: Union[str, Path]
 
 
+class DownloadedFiling(NamedTuple):
+    """Downloaded HTML content plus the output location for PDF rendering."""
+
+    html_content: str
+    base_url: str
+    output_path: Path
+
+
+def _render_pdf(html_content: str, base_url: str, output_path: Path) -> Path:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    weasyprint.HTML(string=html_content, base_url=base_url).write_pdf(str(output_path))
+    return output_path
+
+
+def _download_filing_html(
+    filing: FilingToSave,
+    headers: dict[str, str],
+) -> DownloadedFiling:
+    output_path = Path(filing.output_path)
+    url = document_url(filing.cik, filing.accession_number, filing.primary_document)
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return DownloadedFiling(
+        html_content=response.text,
+        base_url=url,
+        output_path=output_path,
+    )
+
+
+def _render_downloaded_filing(downloaded_filing: DownloadedFiling) -> Path:
+    return _render_pdf(
+        downloaded_filing.html_content,
+        downloaded_filing.base_url,
+        downloaded_filing.output_path,
+    )
+
+
+async def download_filings_html_contents(
+    filings: list[FilingToSave],
+    company: str,
+    email: str,
+    max_concurrent: int = 4,
+) -> list[DownloadedFiling]:
+    """Download filing HTML documents with bounded concurrency."""
+    if not filings:
+        return []
+
+    sem = asyncio.Semaphore(max_concurrent)
+    headers = dict(_get_session(company, email).headers)
+
+    async def _download_one(filing: FilingToSave) -> DownloadedFiling:
+        async with sem:
+            url = document_url(
+                filing.cik,
+                filing.accession_number,
+                filing.primary_document,
+            )
+            logger.info(f"Fetching {url}")
+            downloaded_filing = await asyncio.to_thread(
+                _download_filing_html,
+                filing,
+                headers,
+            )
+            logger.info(f"Downloaded HTML: {url}")
+            return downloaded_filing
+
+    downloaded_filings = await asyncio.gather(
+        *[_download_one(filing) for filing in filings]
+    )
+    return list(downloaded_filings)
+
+
+async def render_filings_to_pdfs(
+    downloaded_filings: list[DownloadedFiling],
+    max_workers: Optional[int] = None,
+) -> list[Path]:
+    """Render downloaded filing HTML to PDFs using a process pool."""
+    if not downloaded_filings:
+        return []
+
+    worker_count = max_workers or min(len(downloaded_filings), os.cpu_count() or 1)
+    loop = asyncio.get_running_loop()
+
+    with ProcessPoolExecutor(max_workers=worker_count) as executor:
+        render_tasks = []
+        for downloaded_filing in downloaded_filings:
+            logger.info(f"Rendering -> {downloaded_filing.output_path}")
+            render_tasks.append(
+                loop.run_in_executor(
+                    executor,
+                    _render_downloaded_filing,
+                    downloaded_filing,
+                )
+            )
+        results = await asyncio.gather(*render_tasks)
+
+    for pdf_path in results:
+        logger.info(f"Saved PDF: {pdf_path}")
+    return list(results)
+
+
 async def save_filings_as_pdfs(
     filings: list[FilingToSave],
     company: str,
     email: str,
     max_concurrent: int = 4,
+    max_render_workers: Optional[int] = None,
 ) -> list[Path]:
     """Render each filing's primary .htm document to PDF via WeasyPrint.
 
@@ -126,44 +229,19 @@ async def save_filings_as_pdfs(
         filings: List of FilingToSave named tuples.
         company: Company name for SEC User-Agent header.
         email: Contact e-mail for SEC User-Agent header.
-        max_concurrent: Maximum number of simultaneous conversions.
+        max_concurrent: Maximum number of simultaneous HTML downloads.
+        max_render_workers: Number of worker processes used for PDF rendering.
 
     Returns:
         List of Path objects pointing to the saved PDFs (same order as input).
     """
-    sem = asyncio.Semaphore(max_concurrent)
-    session = _get_session(company, email)
-
-    def _render_pdf(html_content: str, base_url: str, output_path: Path) -> Path:
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        weasyprint.HTML(string=html_content, base_url=base_url).write_pdf(
-            str(output_path)
-        )
-        return output_path
-
-    async def _save_one(
-        cik: Union[str, int],
-        accession_number: Union[str, int],
-        primary_document: str,
-        output_path: Union[str, Path],
-    ) -> Path:
-        output_path = Path(output_path)
-        url = document_url(cik, accession_number, primary_document)
-        async with sem:
-            logger.info(f"Fetching {url}")
-            response = await asyncio.to_thread(session.get, url)
-            response.raise_for_status()
-            logger.info(f"Rendering → {output_path}")
-            result = await asyncio.to_thread(
-                _render_pdf, response.text, url, output_path
-            )
-        logger.info(f"Saved PDF: {output_path}")
-        return result
-
-    results = await asyncio.gather(
-        *[
-            _save_one(f.cik, f.accession_number, f.primary_document, f.output_path)
-            for f in filings
-        ]
+    downloaded_filings = await download_filings_html_contents(
+        filings=filings,
+        company=company,
+        email=email,
+        max_concurrent=max_concurrent,
     )
-    return list(results)
+    return await render_filings_to_pdfs(
+        downloaded_filings=downloaded_filings,
+        max_workers=max_render_workers,
+    )
