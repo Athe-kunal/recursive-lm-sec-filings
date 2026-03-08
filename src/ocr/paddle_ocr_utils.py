@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 from pdf2image import convert_from_path
 from paddleocr import LayoutDetection
+from tqdm import tqdm
 
 from src.ocr.bbox_postprocess import Box, postprocess, draw_boxes
 
@@ -27,12 +28,10 @@ def run_layout_detection(
     model: LayoutDetection,
     batch_size: int = 128,
 ) -> List[List[Box]]:
-    """Run layout detection on all pages in batches.
-
-    Returns a list of raw-box lists, one entry per page.
-    """
+    """Run layout detection on all pages in batches, with a tqdm progress bar."""
     results: List[List[Box]] = [[] for _ in images]
-    for start in range(0, len(images), batch_size):
+    batches = list(range(0, len(images), batch_size))
+    for start in tqdm(batches, desc="Layout detection", unit="batch"):
         batch = images[start : start + batch_size]
         output = model.predict(batch, batch_size=batch_size, layout_nms=True)
         for offset, res in enumerate(output):
@@ -42,7 +41,10 @@ def run_layout_detection(
 
 def postprocess_boxes(raw_boxes: List[List[Box]]) -> List[List[Box]]:
     """Apply bbox post-processing to each page's raw boxes."""
-    return [postprocess(boxes) for boxes in raw_boxes]
+    return [
+        postprocess(boxes)
+        for boxes in tqdm(raw_boxes, desc="Post-processing pages", unit="page")
+    ]
 
 
 def save_visualizations(
@@ -55,7 +57,14 @@ def save_visualizations(
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    for i, (image, boxes) in enumerate(zip(images, processed_boxes)):
+    for i, (image, boxes) in enumerate(
+        tqdm(
+            zip(images, processed_boxes),
+            total=len(images),
+            desc="Saving visualizations",
+            unit="page",
+        )
+    ):
         save_path = out / f"{pdf_stem}_page_{i + 1}_merged.png"
         draw_boxes(image, boxes, save_path=str(save_path))
 
@@ -68,7 +77,7 @@ def process_pdf(
     device: str = "cpu",
     threshold: float = 0.3,
 ) -> None:
-    """End-to-end pipeline: PDF -> in-memory images -> layout detection -> post-process -> visualize."""
+    """End-to-end pipeline: PDF → images → layout detection → post-process → visualize."""
     images = pdf_to_images(pdf_path, dpi=dpi)
 
     model = LayoutDetection(
