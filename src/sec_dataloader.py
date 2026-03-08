@@ -259,6 +259,6 @@ def load_sec_filings(
 
 
 if __name__ == "__main__":
-    paths = load_sec_filings(ticker="COIN", year="2025")
+    paths = load_sec_filings(ticker="LVS", year="2023")
     for p in paths:
         print(p)

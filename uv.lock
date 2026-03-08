@@ -2965,9 +2965,6 @@ dependencies = [
     { name = "ipykernel", marker = "sys_platform == 'linux'" },
     { name = "loguru", marker = "sys_platform == 'linux'" },
     { name = "olmocr", marker = "sys_platform == 'linux'" },
-    { name = "paddleocr", extra = ["doc-parser"], marker = "sys_platform == 'linux'" },
-    { name = "paddlepaddle", marker = "sys_platform == 'linux'" },
-    { name = "paddlex", marker = "sys_platform == 'linux'" },
     { name = "pdf2image", marker = "sys_platform == 'linux'" },
     { name = "pillow", marker = "sys_platform == 'linux'" },
     { name = "ratelimit", marker = "sys_platform == 'linux'" },
@@ -2983,6 +2980,13 @@ dependencies = [
     { name = "yfinance", marker = "sys_platform == 'linux'" },
 ]
 
+[package.optional-dependencies]
+paddle-ocr = [
+    { name = "paddleocr", extra = ["doc-parser"], marker = "sys_platform == 'linux'" },
+    { name = "paddlepaddle", marker = "sys_platform == 'linux'" },
+    { name = "paddlex", marker = "sys_platform == 'linux'" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "accelerate", specifier = ">=1.12.0" },
@@ -2991,9 +2995,9 @@ requires-dist = [
     { name = "ipykernel", specifier = ">=7.2.0" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "olmocr", specifier = ">=0.4.25" },
-    { name = "paddleocr", extras = ["doc-parser"], specifier = ">=3.3.3" },
-    { name = "paddlepaddle", specifier = "==3.2.0" },
-    { name = "paddlex", specifier = ">=3.4.2" },
+    { name = "paddleocr", extras = ["doc-parser"], marker = "extra == 'paddle-ocr'", specifier = ">=3.3.3" },
+    { name = "paddlepaddle", marker = "extra == 'paddle-ocr'", specifier = "==3.2.0" },
+    { name = "paddlex", marker = "extra == 'paddle-ocr'", specifier = ">=3.4.2" },
     { name = "pdf2image", specifier = ">=1.17.0" },
     { name = "pillow", specifier = ">=12.1.1" },
     { name = "ratelimit", specifier = ">=2.2.1" },
@@ -3008,6 +3012,7 @@ requires-dist = [
     { name = "weasyprint", specifier = ">=68.1" },
     { name = "yfinance", specifier = ">=1.2.0" },
 ]
+provides-extras = ["paddle-ocr"]
 
 [[package]]
 name = "referencing"
