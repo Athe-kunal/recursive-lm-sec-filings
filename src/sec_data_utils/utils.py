@@ -6,6 +6,7 @@ from typing import Final, NamedTuple, Optional, Union
 from pathlib import Path
 import os
 from loguru import logger
+import yfinance as yf
 from ratelimit import limits, sleep_and_retry
 import weasyprint
 
@@ -214,6 +215,15 @@ async def render_filings_to_pdfs(
     for pdf_path in results:
         logger.info(f"Saved PDF: {pdf_path}")
     return list(results)
+
+
+def company_to_ticker(name: str) -> str | None:
+    results = yf.Search(name).quotes
+
+    if not results:
+        return None
+
+    return results[0]["symbol"]
 
 
 async def save_filings_as_pdfs(

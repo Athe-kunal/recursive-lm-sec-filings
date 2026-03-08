@@ -20,4 +20,5 @@ dependencies = [
     "transformers>=4.48.0,<5.0.0",
     "vllm==0.15.0",
     "weasyprint>=68.1",
+    "yfinance>=1.2.0",
 ]
