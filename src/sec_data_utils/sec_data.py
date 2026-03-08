@@ -1,11 +1,14 @@
-from typing import NamedTuple
+import re
 import asyncio
 import requests
 from datetime import datetime
 from pathlib import Path
-import pandas as pd
+from typing import NamedTuple
+
 from loguru import logger
-from src.sec_data_utils import *
+
+from src.sec_data_utils import utils
+from src.sec_data_utils.utils import FilingToSave
 
 
 class SecResults(NamedTuple):
@@ -16,18 +19,17 @@ class SecResults(NamedTuple):
     primary_document: str
 
 
-def sec_main(
+def get_sec_results(
     ticker: str,
     year: str,
     filing_types: list[str] = ["10-K", "10-Q"],
     include_amends: bool = True,
     company: str = "Indiana University Bloomington",
     email: str = "astmohap@iu.edu",
-) -> tuple[list[SecResults], list[Path]]:
-    cik = get_cik_by_ticker(ticker)
+) -> list[SecResults]:
+    """Fetch SEC filing metadata for the given ticker and year."""
+    cik = utils.get_cik_by_ticker(ticker)
     logger.info(f"For {ticker=} found {cik=}")
-
-    rgld_cik = int(cik.lstrip("0"))
 
     forms = []
     if include_amends:
@@ -68,7 +70,7 @@ def sec_main(
             display_name = form_name
             if form_name == "10-Q":
                 datetime_obj = datetime.strptime(report_date, "%Y-%m-%d")
-                quarter = pd.Timestamp(datetime_obj).quarter
+                quarter = (datetime_obj.month + 2) // 3
                 display_name = f"10-Q{quarter}"
                 if display_name in sec_form_names:
                     display_name += "-1"
@@ -84,19 +86,33 @@ def sec_main(
             )
             sec_form_names.append(display_name)
 
+    return form_lists
+
+
+def save_sec_results_as_pdfs(
+    sec_results: list[SecResults],
+    ticker: str,
+    year: str,
+    company: str = "Indiana University Bloomington",
+    email: str = "astmohap@iu.edu",
+) -> list[Path]:
+    """Save SEC results as PDF files."""
+    cik = utils.get_cik_by_ticker(ticker)
+    rgld_cik = int(cik.lstrip("0"))
     output_dir = Path("sec_data") / f"{ticker}-{year}"
+
     filings_to_save = [
-        (
-            rgld_cik,
-            sr.dashes_acc_num,
-            sr.primary_document,
-            output_dir / f"{sr.form_name}.pdf",
+        FilingToSave(
+            cik=rgld_cik,
+            accession_number=sr.dashes_acc_num,
+            primary_document=sr.primary_document,
+            output_path=output_dir / f"{sr.form_name}.pdf",
         )
-        for sr in form_lists
+        for sr in sec_results
     ]
 
     pdf_paths = asyncio.run(
-        save_filings_as_pdfs(
+        utils.save_filings_as_pdfs(
             filings=filings_to_save,
             company=company,
             email=email,
@@ -104,8 +120,35 @@ def sec_main(
     )
 
     logger.info(f"Saved {len(pdf_paths)} PDFs to {output_dir}")
-    return form_lists, pdf_paths
+    return pdf_paths
+
+
+def sec_main(
+    ticker: str,
+    year: str,
+    filing_types: list[str] = ["10-K", "10-Q"],
+    include_amends: bool = True,
+    company: str = "Indiana University Bloomington",
+    email: str = "astmohap@iu.edu",
+) -> tuple[list[SecResults], list[Path]]:
+    """Fetch SEC results and save them as PDFs."""
+    sec_results = get_sec_results(
+        ticker=ticker,
+        year=year,
+        filing_types=filing_types,
+        include_amends=include_amends,
+        company=company,
+        email=email,
+    )
+    pdf_paths = save_sec_results_as_pdfs(
+        sec_results=sec_results,
+        ticker=ticker,
+        year=year,
+        company=company,
+        email=email,
+    )
+    return sec_results, pdf_paths
 
 
 if __name__ == "__main__":
-    data = sec_main(ticker="GOOG", year="2025")
+    data = sec_main(ticker="NVDA", year="2025")

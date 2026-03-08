@@ -1,7 +1,7 @@
 import re
 import asyncio
 import requests
-from typing import Final, Union, Optional
+from typing import Final, NamedTuple, Union, Optional
 from pathlib import Path
 import os
 from loguru import logger
@@ -105,8 +105,17 @@ def document_url(
     return f"{SEC_ARCHIVE_URL}/{cik}/{acc_no_dashes}/{primary_document}"
 
 
+class FilingToSave(NamedTuple):
+    """A single filing to render to PDF."""
+
+    cik: Union[str, int]
+    accession_number: Union[str, int]
+    primary_document: str
+    output_path: Union[str, Path]
+
+
 async def save_filings_as_pdfs(
-    filings: list[tuple[Union[str, int], Union[str, int], str, Union[str, Path]]],
+    filings: list[FilingToSave],
     company: str,
     email: str,
     max_concurrent: int = 4,
@@ -114,7 +123,7 @@ async def save_filings_as_pdfs(
     """Render each filing's primary .htm document to PDF via WeasyPrint.
 
     Args:
-        filings: List of (cik, accession_number, primary_document, output_path) tuples.
+        filings: List of FilingToSave named tuples.
         company: Company name for SEC User-Agent header.
         email: Contact e-mail for SEC User-Agent header.
         max_concurrent: Maximum number of simultaneous conversions.
@@ -141,7 +150,6 @@ async def save_filings_as_pdfs(
         output_path = Path(output_path)
         url = document_url(cik, accession_number, primary_document)
         async with sem:
-            await asyncio.sleep(0.15)
             logger.info(f"Fetching {url}")
             response = await asyncio.to_thread(session.get, url)
             response.raise_for_status()
@@ -154,8 +162,8 @@ async def save_filings_as_pdfs(
 
     results = await asyncio.gather(
         *[
-            _save_one(cik, acc_num, primary_doc, out_path)
-            for cik, acc_num, primary_doc, out_path in filings
+            _save_one(f.cik, f.accession_number, f.primary_document, f.output_path)
+            for f in filings
         ]
     )
     return list(results)
