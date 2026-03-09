@@ -110,7 +110,7 @@ async def dispatch_sec_filings(
         if ticker is not None:
             resolved_pairs.add((ticker, year))
 
-    resolved_pair_list: list[tuple[str, str]] = sorted(resolved_pairs)[:1]
+    resolved_pair_list: list[tuple[str, str]] = sorted(resolved_pairs)
 
     logger.info(
         f"dispatch_sec_filings: dispatching {len(resolved_pair_list)} SEC filing requests"
