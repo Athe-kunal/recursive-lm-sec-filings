@@ -52,13 +52,13 @@ def markdown_to_repl_env(
 
 
 @functools.lru_cache
-def load_sec_filing_repl_envs(
+async def load_sec_filing_repl_envs(
     ticker: str,
     year: str,
     filing_types: tuple[str, ...] = ("10-K", "10-Q"),
     include_amends: bool = True,
 ) -> list[MarkdownReplEnvironment]:
-    filings = load_sec_filings(
+    filings = await load_sec_filings(
         ticker=ticker,
         year=year,
         filing_types=list(filing_types),
@@ -73,11 +73,15 @@ def load_sec_filing_repl_envs(
 
 
 if __name__ == "__main__":
-    envs = load_sec_filing_repl_envs(
-        ticker="GOOG",
-        year="2025",
-        filing_types=("10-K", "10-Q"),
-        include_amends=True,
+    import asyncio
+
+    envs = asyncio.run(
+        load_sec_filing_repl_envs(
+            ticker="GOOG",
+            year="2025",
+            filing_types=("10-K", "10-Q"),
+            include_amends=True,
+        )
     )
     for env in envs:
         print(env.ticker, env.year, env.filing_type, env.markdown_path)

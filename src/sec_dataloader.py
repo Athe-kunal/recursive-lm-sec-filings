@@ -30,7 +30,7 @@ def company_to_ticker(name: str) -> str | None:
     return results[0]["symbol"]
 
 
-def fetch_sec_filings(
+async def fetch_sec_filings(
     ticker: str,
     year: str,
     filing_types: list[str] = ["10-K", "10-Q"],
@@ -97,7 +97,7 @@ def fetch_sec_filings(
             f"Downloading {len(missing_results)} missing PDF(s) for "
             f"{ticker}-{year}…"
         )
-        save_sec_results_as_pdfs(
+        await save_sec_results_as_pdfs(
             sec_results=missing_results,
             ticker=ticker,
             year=year,
@@ -138,7 +138,7 @@ def _derive_markdown_path(pdf_path: Path, workspace: str) -> Path:
     return Path(workspace) / "markdown" / dir_path / md_filename
 
 
-def run_ocr_on_filings(
+async def run_ocr_on_filings(
     pdf_dir: str,
     workspace: str = DEFAULT_WORKSPACE,
     server: str = DEFAULT_SERVER,
@@ -172,7 +172,9 @@ def run_ocr_on_filings(
     pdf_dir_path = Path(pdf_dir)
     pdf_files = sorted(pdf_dir_path.glob("*.pdf"))
 
-    _run_ocr(pdf_dir=str(pdf_dir_path), workspace=workspace, server=server, model=model)
+    await _run_ocr(
+        pdf_dir=str(pdf_dir_path), workspace=workspace, server=server, model=model
+    )
 
     expected_md_paths = [_derive_markdown_path(p, workspace) for p in pdf_files]
     not_produced = [p for p in expected_md_paths if not p.exists()]
@@ -185,7 +187,7 @@ def run_ocr_on_filings(
     return expected_md_paths
 
 
-def load_sec_filings(
+async def load_sec_filings(
     ticker: str,
     year: str,
     filing_types: list[str] = ["10-K", "10-Q"],
@@ -220,13 +222,14 @@ def load_sec_filings(
         FileNotFoundError: If the PDF directory is empty after the download
             step.
     """
+    logger.info(f"Loading SEC filings for {ticker}-{year}")
     company = os.getenv("SEC_COMPANY", "Indiana University Bloomington")
     email = os.getenv("SEC_EMAIL", "astmohap@iu.edu")
     pdf_base_dir = os.getenv("SEC_PDF_BASE_DIR", "sec_data")
     workspace = os.getenv("OLMOCR_WORKSPACE", DEFAULT_WORKSPACE)
     server = os.getenv("OLMOCR_SERVER", DEFAULT_SERVER)
     model = os.getenv("OLMOCR_MODEL", DEFAULT_MODEL)
-    sec_results, _pdf_paths = fetch_sec_filings(
+    sec_results, _pdf_paths = await fetch_sec_filings(
         ticker=ticker,
         year=year,
         filing_types=filing_types,
@@ -237,7 +240,7 @@ def load_sec_filings(
     )
 
     pdf_dir = str(Path(pdf_base_dir) / f"{ticker}-{year}")
-    markdown_paths = run_ocr_on_filings(
+    markdown_paths = await run_ocr_on_filings(
         pdf_dir=pdf_dir,
         workspace=workspace,
         server=server,
@@ -249,13 +252,14 @@ def load_sec_filings(
     result = [(sr, md_by_stem[sr.form_name]) for sr in sec_results]
 
     logger.info(
-        f"load_sec_filings: {len(result)} markdown(s) ready for "
-        f"{ticker}-{year}."
+        f"load_sec_filings: {len(result)} markdown(s) ready for " f"{ticker}-{year}."
     )
     return result
 
 
 if __name__ == "__main__":
-    filings = load_sec_filings(ticker="LVS", year="2023")
+    import asyncio
+
+    filings = asyncio.run(load_sec_filings(ticker="LVS", year="2023"))
     for sr, md_path in filings:
         print(sr, md_path)
