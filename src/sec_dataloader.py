@@ -38,7 +38,7 @@ def fetch_sec_filings(
     company: str = "Indiana University Bloomington",
     email: str = "astmohap@iu.edu",
     pdf_base_dir: str = "sec_data",
-) -> list[Path]:
+) -> tuple[list[SecResults], list[Path]]:
     """Fetch SEC filings for a given ticker and year, saving each as a PDF.
 
     Filing metadata is always retrieved from the SEC API so the full set of
@@ -58,8 +58,9 @@ def fetch_sec_filings(
             ``{pdf_base_dir}/{ticker}-{year}/``.
 
     Returns:
-        Ordered list of :class:`~pathlib.Path` objects pointing to all PDFs
-        (both pre-existing and newly downloaded).
+        A tuple of (sec_results, pdf_paths) where both lists are in the same
+        order — each ``SecResults`` entry corresponds to the PDF at the same
+        index.
 
     Raises:
         RuntimeError: Re-raised from the SEC API layer when the submissions
@@ -82,14 +83,12 @@ def fetch_sec_filings(
         )
 
     output_dir = Path(pdf_base_dir) / f"{ticker}-{year}"
-    existing_paths: list[Path] = []
     missing_results: list[SecResults] = []
 
     for sr in sec_results:
         pdf_path = output_dir / f"{sr.form_name}.pdf"
         if pdf_path.exists():
             logger.info(f"PDF already exists, skipping download: {pdf_path}")
-            existing_paths.append(pdf_path)
         else:
             missing_results.append(sr)
 
@@ -98,19 +97,18 @@ def fetch_sec_filings(
             f"Downloading {len(missing_results)} missing PDF(s) for "
             f"{ticker}-{year}…"
         )
-        new_paths = save_sec_results_as_pdfs(
+        save_sec_results_as_pdfs(
             sec_results=missing_results,
             ticker=ticker,
             year=year,
             company=company,
             email=email,
         )
-    else:
-        new_paths = []
 
-    all_paths = existing_paths + new_paths
+    # Build pdf_paths in sec_results order (all PDFs now exist on disk).
+    all_paths = [output_dir / f"{sr.form_name}.pdf" for sr in sec_results]
     logger.info(f"fetch_sec_filings: {len(all_paths)} PDF(s) ready in {output_dir}")
-    return all_paths
+    return sec_results, all_paths
 
 
 def _derive_markdown_path(pdf_path: Path, workspace: str) -> Path:
@@ -192,13 +190,7 @@ def load_sec_filings(
     year: str,
     filing_types: list[str] = ["10-K", "10-Q"],
     include_amends: bool = True,
-    company: str = "Indiana University Bloomington",
-    email: str = "astmohap@iu.edu",
-    pdf_base_dir: str = "sec_data",
-    workspace: str = DEFAULT_WORKSPACE,
-    server: str = DEFAULT_SERVER,
-    model: str = DEFAULT_MODEL,
-) -> list[Path]:
+) -> list[tuple[SecResults, Path]]:
     """Fetch SEC filings and convert them to markdown via OCR.
 
     This is the primary entry point for the data-loading pipeline.  It
@@ -216,16 +208,10 @@ def load_sec_filings(
         filing_types: SEC form types to retrieve (default ``["10-K", "10-Q"]``).
         include_amends: When ``True``, amended forms (``/A`` suffix) are also
             fetched alongside the originals.
-        company: Organisation name sent in the SEC ``User-Agent`` header.
-        email: Contact e-mail sent in the SEC ``User-Agent`` header.
-        pdf_base_dir: Root directory under which PDFs are saved.
-        workspace: Root workspace directory used by the olmocr pipeline.
-        server: Base URL of the running olmOCR vLLM server.
-        model: Model name as registered on the vLLM server.
 
     Returns:
-        List of :class:`~pathlib.Path` objects pointing to the produced
-        markdown files (one per filing).
+        List of ``(SecResults, markdown_path)`` tuples — one per filing, in the
+        same order as returned by the SEC API.
 
     Raises:
         ValueError: If no filings are found for the requested ticker/year.
@@ -234,7 +220,13 @@ def load_sec_filings(
         FileNotFoundError: If the PDF directory is empty after the download
             step.
     """
-    pdf_paths = fetch_sec_filings(
+    company = os.getenv("SEC_COMPANY", "Indiana University Bloomington")
+    email = os.getenv("SEC_EMAIL", "astmohap@iu.edu")
+    pdf_base_dir = os.getenv("SEC_PDF_BASE_DIR", "sec_data")
+    workspace = os.getenv("OLMOCR_WORKSPACE", DEFAULT_WORKSPACE)
+    server = os.getenv("OLMOCR_SERVER", DEFAULT_SERVER)
+    model = os.getenv("OLMOCR_MODEL", DEFAULT_MODEL)
+    sec_results, _pdf_paths = fetch_sec_filings(
         ticker=ticker,
         year=year,
         filing_types=filing_types,
@@ -252,61 +244,18 @@ def load_sec_filings(
         model=model,
     )
 
+    # markdown stem == form_name (PDF stem), so match by stem.
+    md_by_stem = {p.stem: p for p in markdown_paths}
+    result = [(sr, md_by_stem[sr.form_name]) for sr in sec_results]
+
     logger.info(
-        f"load_sec_filings: {len(markdown_paths)} markdown(s) ready for "
+        f"load_sec_filings: {len(result)} markdown(s) ready for "
         f"{ticker}-{year}."
     )
-    return markdown_paths
-
-
-def load_sec_filings_as_repl_envs(
-    ticker: str,
-    year: str,
-    filing_types: list[str] = ["10-K", "10-Q"],
-    include_amends: bool = True,
-) -> list["MarkdownReplEnvironment"]:
-    """Load SEC filings and return one Python REPL environment per markdown.
-
-    This helper is a shorter single-call alternative when you need interactive
-    Python contexts for the OCR-produced markdown outputs.
-
-    Args:
-        ticker: Stock ticker symbol (e.g. ``"NVDA"``).
-        year: Four-digit fiscal year string.
-        filing_types: Filing types to retrieve.
-        include_amends: Whether to include amended filing forms.
-    Returns:
-        List of REPL environments, one for each generated markdown file.
-    """
-    from src.sec_repl_loader import markdown_to_repl_env
-
-    company = os.getenv("SEC_COMPANY", "Indiana University Bloomington")
-    email = os.getenv("SEC_EMAIL", "astmohap@iu.edu")
-    pdf_base_dir = os.getenv("SEC_PDF_BASE_DIR", "sec_data")
-    workspace = os.getenv("OLMOCR_WORKSPACE", DEFAULT_WORKSPACE)
-    server = os.getenv("OLMOCR_SERVER", DEFAULT_SERVER)
-    model = os.getenv("OLMOCR_MODEL", DEFAULT_MODEL)
-
-    markdown_paths = load_sec_filings(
-        ticker=ticker,
-        year=year,
-        filing_types=filing_types,
-        include_amends=include_amends,
-        company=company,
-        email=email,
-        pdf_base_dir=pdf_base_dir,
-        workspace=workspace,
-        server=server,
-        model=model,
-    )
-
-    return [
-        markdown_to_repl_env(markdown_path=path, ticker=ticker, year=year)
-        for path in markdown_paths
-    ]
+    return result
 
 
 if __name__ == "__main__":
-    paths = load_sec_filings(ticker="LVS", year="2023")
-    for p in paths:
-        print(p)
+    filings = load_sec_filings(ticker="LVS", year="2023")
+    for sr, md_path in filings:
+        print(sr, md_path)

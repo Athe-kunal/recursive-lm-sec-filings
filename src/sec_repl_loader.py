@@ -1,11 +1,9 @@
 from __future__ import annotations
-
-import os
 from code import InteractiveConsole
 from dataclasses import dataclass
 from pathlib import Path
-
-from src.ocr.run_ocr import DEFAULT_MODEL, DEFAULT_SERVER, DEFAULT_WORKSPACE
+import functools
+from src.sec_data_utils.sec_data import SecResults
 from src.sec_dataloader import load_sec_filings
 
 
@@ -18,12 +16,15 @@ class MarkdownReplEnvironment:
     markdown_text: str
     namespace: dict[str, object]
     console: InteractiveConsole
+    sec_result: SecResults
 
 
+@functools.lru_cache
 def markdown_to_repl_env(
     markdown_path: Path,
     ticker: str,
     year: str,
+    sec_result: SecResults,
 ) -> MarkdownReplEnvironment:
     resolved_path = markdown_path.resolve()
     markdown_text = resolved_path.read_text(encoding="utf-8")
@@ -34,6 +35,7 @@ def markdown_to_repl_env(
         "filing_type": filing_type,
         "markdown_path": resolved_path,
         "markdown_text": markdown_text,
+        "sec_result": sec_result,
     }
     console = InteractiveConsole(locals=namespace)
 
@@ -45,35 +47,37 @@ def markdown_to_repl_env(
         markdown_text=markdown_text,
         namespace=namespace,
         console=console,
+        sec_result=sec_result,
     )
 
 
+@functools.lru_cache
 def load_sec_filing_repl_envs(
     ticker: str,
     year: str,
-    filing_types: list[str] = ["10-K", "10-Q"],
+    filing_types: tuple[str, ...] = ("10-K", "10-Q"),
     include_amends: bool = True,
 ) -> list[MarkdownReplEnvironment]:
-    company = os.getenv("SEC_COMPANY", "Indiana University Bloomington")
-    email = os.getenv("SEC_EMAIL", "astmohap@iu.edu")
-    pdf_base_dir = os.getenv("SEC_PDF_BASE_DIR", "sec_data")
-    workspace = os.getenv("OLMOCR_WORKSPACE", DEFAULT_WORKSPACE)
-    server = os.getenv("OLMOCR_SERVER", DEFAULT_SERVER)
-    model = os.getenv("OLMOCR_MODEL", DEFAULT_MODEL)
-
-    markdown_paths = load_sec_filings(
+    filings = load_sec_filings(
         ticker=ticker,
         year=year,
-        filing_types=filing_types,
+        filing_types=list(filing_types),
         include_amends=include_amends,
-        company=company,
-        email=email,
-        pdf_base_dir=pdf_base_dir,
-        workspace=workspace,
-        server=server,
-        model=model,
     )
     return [
-        markdown_to_repl_env(markdown_path=path, ticker=ticker, year=year)
-        for path in markdown_paths
+        markdown_to_repl_env(
+            markdown_path=path, ticker=ticker, year=year, sec_result=sr
+        )
+        for sr, path in filings
     ]
+
+
+if __name__ == "__main__":
+    envs = load_sec_filing_repl_envs(
+        ticker="GOOG",
+        year="2025",
+        filing_types=("10-K", "10-Q"),
+        include_amends=True,
+    )
+    for env in envs:
+        print(env.ticker, env.year, env.filing_type, env.markdown_path)
