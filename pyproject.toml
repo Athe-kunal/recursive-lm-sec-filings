@@ -8,6 +8,7 @@ dependencies = [
     "accelerate>=1.12.0",
     "aiohttp>=3.13.3",
     "black>=26.3.0",
+    "datasets>=4.6.1",
     "ipykernel>=7.2.0",
     "loguru>=0.7.3",
     "olmocr>=0.4.25",
