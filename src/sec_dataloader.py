@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import yfinance as yf
@@ -256,6 +257,53 @@ def load_sec_filings(
         f"{ticker}-{year}."
     )
     return markdown_paths
+
+
+def load_sec_filings_as_repl_envs(
+    ticker: str,
+    year: str,
+    filing_types: list[str] = ["10-K", "10-Q"],
+    include_amends: bool = True,
+) -> list["MarkdownReplEnvironment"]:
+    """Load SEC filings and return one Python REPL environment per markdown.
+
+    This helper is a shorter single-call alternative when you need interactive
+    Python contexts for the OCR-produced markdown outputs.
+
+    Args:
+        ticker: Stock ticker symbol (e.g. ``"NVDA"``).
+        year: Four-digit fiscal year string.
+        filing_types: Filing types to retrieve.
+        include_amends: Whether to include amended filing forms.
+    Returns:
+        List of REPL environments, one for each generated markdown file.
+    """
+    from src.sec_repl_loader import markdown_to_repl_env
+
+    company = os.getenv("SEC_COMPANY", "Indiana University Bloomington")
+    email = os.getenv("SEC_EMAIL", "astmohap@iu.edu")
+    pdf_base_dir = os.getenv("SEC_PDF_BASE_DIR", "sec_data")
+    workspace = os.getenv("OLMOCR_WORKSPACE", DEFAULT_WORKSPACE)
+    server = os.getenv("OLMOCR_SERVER", DEFAULT_SERVER)
+    model = os.getenv("OLMOCR_MODEL", DEFAULT_MODEL)
+
+    markdown_paths = load_sec_filings(
+        ticker=ticker,
+        year=year,
+        filing_types=filing_types,
+        include_amends=include_amends,
+        company=company,
+        email=email,
+        pdf_base_dir=pdf_base_dir,
+        workspace=workspace,
+        server=server,
+        model=model,
+    )
+
+    return [
+        markdown_to_repl_env(markdown_path=path, ticker=ticker, year=year)
+        for path in markdown_paths
+    ]
 
 
 if __name__ == "__main__":

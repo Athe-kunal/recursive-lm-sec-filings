@@ -21,3 +21,16 @@ Pipeline for fetching SEC filings and converting them to markdown via OCR.
 ### Requirements
 
 - Running olmOCR vLLM server (default: `http://localhost:8000/v1`). Override with the `OLMOCR_SERVER` env var.
+
+### Environment variables for REPL helpers
+
+The REPL loader helpers can be called with only `ticker`, `year`, `filing_types`, and
+`include_amends`. The remaining settings are resolved from environment variables
+(with defaults if unset):
+
+- `SEC_COMPANY` (default: `Indiana University Bloomington`)
+- `SEC_EMAIL` (default: `astmohap@iu.edu`)
+- `SEC_PDF_BASE_DIR` (default: `sec_data`)
+- `OLMOCR_WORKSPACE` (default: `localworkspace`)
+- `OLMOCR_SERVER` (default: `http://localhost:8000/v1`)
+- `OLMOCR_MODEL` (default: `allenai/olmOCR-7B-0225-preview`)
