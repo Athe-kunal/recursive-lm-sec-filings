@@ -9,7 +9,7 @@ DEFAULT_MODEL = "allenai/olmOCR-2-7B-1025-FP8"
 DEFAULT_WORKSPACE = "./localworkspace"
 
 
-def run(
+async def run(
     pdf_dir: str,
     workspace: str = DEFAULT_WORKSPACE,
     server: str = DEFAULT_SERVER,
@@ -33,8 +33,4 @@ def run(
 
     from src.ocr.olmocr_pipeline import main
 
-    asyncio.run(main())
-
-
-if __name__ == "__main__":
-    run(pdf_dir="sec_data/CSCO-2025")
+    await main()

@@ -89,7 +89,7 @@ def get_sec_results(
     return form_lists
 
 
-def save_sec_results_as_pdfs(
+async def save_sec_results_as_pdfs(
     sec_results: list[SecResults],
     ticker: str,
     year: str,
@@ -111,19 +111,17 @@ def save_sec_results_as_pdfs(
         for sr in sec_results
     ]
 
-    pdf_paths = asyncio.run(
-        utils.save_filings_as_pdfs(
-            filings=filings_to_save,
-            company=company,
-            email=email,
-        )
+    pdf_paths = await utils.save_filings_as_pdfs(
+        filings=filings_to_save,
+        company=company,
+        email=email,
     )
 
     logger.info(f"Saved {len(pdf_paths)} PDFs to {output_dir}")
     return pdf_paths
 
 
-def sec_main(
+async def sec_main(
     ticker: str,
     year: str,
     filing_types: list[str] = ["10-K", "10-Q"],
@@ -140,7 +138,7 @@ def sec_main(
         company=company,
         email=email,
     )
-    pdf_paths = save_sec_results_as_pdfs(
+    pdf_paths = await save_sec_results_as_pdfs(
         sec_results=sec_results,
         ticker=ticker,
         year=year,
@@ -151,4 +149,4 @@ def sec_main(
 
 
 if __name__ == "__main__":
-    data = sec_main(ticker="NVDA", year="2025")
+    data = asyncio.run(sec_main(ticker="NVDA", year="2025"))
