@@ -121,7 +121,18 @@ async def dispatch_sec_filings(
         for ticker, year in resolved_pair_list
     ]
 
-    return await asyncio.gather(*tasks)
+    gathered_results = await asyncio.gather(*tasks, return_exceptions=True)
+    results: list[list[tuple[SecResults, Path]]] = []
+
+    for (ticker, year), result in zip(resolved_pair_list, gathered_results, strict=True):
+        if isinstance(result, Exception):
+            logger.error(
+                f"dispatch_sec_filings: failed loading {ticker}-{year}: {result}"
+            )
+            continue
+        results.append(result)
+
+    return results
 
 
 async def main() -> None:

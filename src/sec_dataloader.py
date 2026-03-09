@@ -65,8 +65,6 @@ async def fetch_sec_filings(
     Raises:
         RuntimeError: Re-raised from the SEC API layer when the submissions
             endpoint returns a non-200 response.
-        ValueError: If no filings of the requested types are found for the
-            given ticker and year.
     """
     sec_results: list[SecResults] = get_sec_results(
         ticker=ticker,
@@ -78,9 +76,10 @@ async def fetch_sec_filings(
     )
 
     if not sec_results:
-        raise ValueError(
+        logger.warning(
             f"No filings found for {ticker=} {year=} with {filing_types=}."
         )
+        return [], []
 
     output_dir = Path(pdf_base_dir) / f"{ticker}-{year}"
     missing_results: list[SecResults] = []
@@ -216,7 +215,6 @@ async def load_sec_filings(
         same order as returned by the SEC API.
 
     Raises:
-        ValueError: If no filings are found for the requested ticker/year.
         RuntimeError: On SEC API failure or if OCR does not produce expected
             output files.
         FileNotFoundError: If the PDF directory is empty after the download
@@ -238,6 +236,10 @@ async def load_sec_filings(
         email=email,
         pdf_base_dir=pdf_base_dir,
     )
+
+    if not sec_results:
+        logger.warning(f"load_sec_filings: no filings available for {ticker}-{year}")
+        return []
 
     pdf_dir = str(Path(pdf_base_dir) / f"{ticker}-{year}")
     markdown_paths = await run_ocr_on_filings(
