@@ -17,6 +17,7 @@ class QAExample:
     year: str
     ticker_or_company_name: str
     filing_type: str
+    data_source: str
 
 
 QA_FEATURES = Features(
@@ -27,6 +28,7 @@ QA_FEATURES = Features(
         "year": Value("string"),
         "ticker_or_company_name": Value("string"),
         "filing_type": Value("string"),
+        "data_source": Value("string"),
     }
 )
 
@@ -43,6 +45,7 @@ def load_financial_qa() -> Dataset:
             year=year,
             ticker_or_company_name=row["ticker"],
             filing_type=filing_type,
+            data_source="virattt/financial-qa-10K",
         )
         return asdict(example)
 
@@ -63,6 +66,7 @@ def load_financebench() -> Dataset:
             year=str(row["doc_period"]),
             ticker_or_company_name=row["company"],
             filing_type=row["doc_type"],
+            data_source="PatronusAI/financebench",
         )
         return asdict(example)
 
@@ -124,7 +128,9 @@ async def dispatch_sec_filings(
     gathered_results = await asyncio.gather(*tasks, return_exceptions=True)
     results: list[list[tuple[SecResults, Path]]] = []
 
-    for (ticker, year), result in zip(resolved_pair_list, gathered_results, strict=True):
+    for (ticker, year), result in zip(
+        resolved_pair_list, gathered_results, strict=True
+    ):
         if isinstance(result, Exception):
             logger.error(
                 f"dispatch_sec_filings: failed loading {ticker}-{year}: {result}"
