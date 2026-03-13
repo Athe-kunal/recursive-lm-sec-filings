@@ -28,9 +28,9 @@ The REPL loader helpers can be called with only `ticker`, `year`, `filing_types`
 `include_amends`. The remaining settings are resolved from environment variables
 (with defaults if unset):
 
-- `SEC_COMPANY` (default: `Indiana University Bloomington`)
-- `SEC_EMAIL` (default: `astmohap@iu.edu`)
+- `SEC_COMPANY` (default: `<company-name>`)
+- `SEC_EMAIL` (default: `<email>`)
 - `SEC_PDF_BASE_DIR` (default: `sec_data`)
 - `OLMOCR_WORKSPACE` (default: `localworkspace`)
 - `OLMOCR_SERVER` (default: `http://localhost:8000/v1`)
-- `OLMOCR_MODEL` (default: `allenai/olmOCR-7B-0225-preview`)
+- `OLMOCR_MODEL` (default: `allenai/olmOCR-2-7B-1025-FP8`)
