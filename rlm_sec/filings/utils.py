@@ -1,18 +1,36 @@
 import re
 import asyncio
-from concurrent.futures import ProcessPoolExecutor
 import requests
 from typing import Final, NamedTuple, Optional, Union
 from pathlib import Path
 import os
 from loguru import logger
 from ratelimit import limits, sleep_and_retry
-import weasyprint
+import yfinance as yf
+from playwright.async_api import async_playwright, Browser
 
 SEC_ARCHIVE_URL: Final[str] = "https://www.sec.gov/Archives/edgar/data"
 SEC_VIEWER_URL: Final[str] = "https://www.sec.gov/ix?doc=/Archives/edgar/data"
 SEC_SEARCH_URL: Final[str] = "http://www.sec.gov/cgi-bin/browse-edgar"
 SEC_SUBMISSIONS_URL = "https://data.sec.gov/submissions"
+
+
+def company_to_ticker(name: str) -> str | None:
+    """Resolve a company name to its stock ticker symbol via Yahoo Finance.
+
+    Args:
+        name: The company name to look up (e.g. ``"Apple Inc"``).
+
+    Returns:
+        The ticker symbol string (e.g. ``"AAPL"``), or ``None`` if no match
+        is found.
+    """
+    results = yf.Search(name).quotes
+
+    if not results:
+        return None
+
+    return results[0]["symbol"]
 
 
 def _drop_dashes(accession_number: Union[str, int]) -> str:
@@ -79,6 +97,8 @@ def get_cik_by_ticker(ticker: str) -> str:
     response = requests.get(url, stream=True, headers=headers)
     response.raise_for_status()
     results = cik_re.findall(response.text)
+    if not results:
+        raise ValueError(f"Couldn't find the CIK for {ticker=}")
     return str(results[0])
 
 
@@ -123,12 +143,6 @@ class DownloadedFiling(NamedTuple):
     output_path: Path
 
 
-def _render_pdf(html_content: str, base_url: str, output_path: Path) -> Path:
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    weasyprint.HTML(string=html_content, base_url=base_url).write_pdf(str(output_path))
-    return output_path
-
-
 def _download_filing_html(
     filing: FilingToSave,
     headers: dict[str, str],
@@ -141,14 +155,6 @@ def _download_filing_html(
         html_content=response.text,
         base_url=url,
         output_path=output_path,
-    )
-
-
-def _render_downloaded_filing(downloaded_filing: DownloadedFiling) -> Path:
-    return _render_pdf(
-        downloaded_filing.html_content,
-        downloaded_filing.base_url,
-        downloaded_filing.output_path,
     )
 
 
@@ -191,33 +197,56 @@ async def download_filings_html_contents(
     return [filing for filing in downloaded_filings if filing is not None]
 
 
+async def _render_pdf_with_browser(
+    browser: Browser,
+    downloaded_filing: DownloadedFiling,
+    sem: asyncio.Semaphore,
+) -> Optional[Path]:
+    """Render a single filing's HTML to PDF using a Playwright browser page."""
+    output_path = downloaded_filing.output_path
+    if output_path.exists():
+        logger.info(f"Skipping existing PDF: {output_path}")
+        return output_path
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    async with sem:
+        page = await browser.new_page()
+        try:
+            await page.set_content(
+                downloaded_filing.html_content,
+                wait_until="networkidle",
+            )
+            await page.pdf(
+                path=str(output_path), format="Letter", print_background=True
+            )
+            logger.info(f"Saved PDF: {output_path}")
+            return output_path
+        except Exception as exc:
+            logger.error(f"Failed rendering PDF {output_path}: {exc}")
+            return None
+        finally:
+            await page.close()
+
+
 async def render_filings_to_pdfs(
     downloaded_filings: list[DownloadedFiling],
-    max_workers: Optional[int] = None,
+    max_concurrent: int = 4,
 ) -> list[Path]:
-    """Render downloaded filing HTML to PDFs using a process pool."""
+    """Render downloaded filing HTML to PDFs using headless Chromium via Playwright."""
     if not downloaded_filings:
         return []
 
-    worker_count = max_workers or min(len(downloaded_filings), os.cpu_count() or 1)
-    loop = asyncio.get_running_loop()
+    sem = asyncio.Semaphore(max_concurrent)
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch()
+        tasks = [
+            _render_pdf_with_browser(browser, filing, sem)
+            for filing in downloaded_filings
+        ]
+        results = await asyncio.gather(*tasks)
+        await browser.close()
 
-    with ProcessPoolExecutor(max_workers=worker_count) as executor:
-        render_tasks = []
-        for downloaded_filing in downloaded_filings:
-            logger.info(f"Rendering -> {downloaded_filing.output_path}")
-            render_tasks.append(
-                loop.run_in_executor(
-                    executor,
-                    _render_downloaded_filing,
-                    downloaded_filing,
-                )
-            )
-        results = await asyncio.gather(*render_tasks)
-
-    for pdf_path in results:
-        logger.info(f"Saved PDF: {pdf_path}")
-    return list(results)
+    return [path for path in results if path is not None]
 
 
 async def save_filings_as_pdfs(
@@ -226,7 +255,7 @@ async def save_filings_as_pdfs(
     email: str,
     max_concurrent: int = 16,
 ) -> list[Path]:
-    """Render each filing's primary .htm document to PDF via WeasyPrint.
+    """Render each filing's primary .htm document to PDF via headless Chromium.
 
     Args:
         filings: List of FilingToSave named tuples.
@@ -235,7 +264,7 @@ async def save_filings_as_pdfs(
         max_concurrent: Maximum number of simultaneous HTML downloads.
 
     Returns:
-        List of Path objects pointing to the saved PDFs (same order as input).
+        List of Path objects pointing to the saved PDFs.
     """
     downloaded_filings = await download_filings_html_contents(
         filings=filings,

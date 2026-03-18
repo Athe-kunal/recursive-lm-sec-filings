@@ -3,7 +3,7 @@ import os
 
 from loguru import logger
 
-from src.trainer import hf_dataloader
+from rlm_sec.trainer import hf_dataloader
 
 
 def make_map_fn():
