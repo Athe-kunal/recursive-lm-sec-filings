@@ -12,11 +12,13 @@ dependencies = [
     "ipykernel>=7.2.0",
     "loguru>=0.7.3",
     "olmocr>=0.4.25",
+    "omegaconf>=2.3.0",
     "pdf2image>=1.17.0",
     "pillow>=12.1.1",
     "ratelimit>=2.2.1",
     "requests>=2.32.5",
     "safetensors>=0.7.0",
+    "skyrl-gym>=0.2.0",
     "streamlit==1.55.0",
     "tenacity>=9.1.4",
     "torch>=2.6.0",
@@ -36,3 +38,19 @@ paddle-ocr = [
 
 [tool.uv]
 environments = ["sys_platform == 'linux' and python_version >= '3.11'"]
+# cached-path (via olmocr) requires rich<14; skyrl requires rich>=14.1. Override to allow skyrl-train.
+override-dependencies = ["rich>=14.1.0"]
+
+[tool.uv.sources]
+skyrl = { path = "external/SkyRL", editable = true }
+
+[dependency-groups]
+skyrl-train = [
+    "skyrl[skyrl-train]",
+]
+
+[tool.uv.extra-build-dependencies]
+flash-attn = ["torch"]
+
+[tool.uv.extra-build-variables]
+flash-attn = { FLASH_ATTENTION_SKIP_CUDA_BUILD = "TRUE" }

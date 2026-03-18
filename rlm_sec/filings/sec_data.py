@@ -1,17 +1,19 @@
+import json
 import re
 import asyncio
 import requests
+from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
-from typing import NamedTuple
 
 from loguru import logger
 
-from src.sec_data_utils import utils
-from src.sec_data_utils.utils import FilingToSave
+from rlm_sec.filings import utils
+from settings import olmocr_settings
 
 
-class SecResults(NamedTuple):
+@dataclass(frozen=True)
+class SecResults:
     dashes_acc_num: str
     form_name: str
     filing_date: str
@@ -24,10 +26,12 @@ def get_sec_results(
     year: str,
     filing_types: list[str] = ["10-K", "10-Q"],
     include_amends: bool = True,
-    company: str = "Indiana University Bloomington",
-    email: str = "astmohap@iu.edu",
+    company: str | None = None,
+    email: str | None = None,
 ) -> list[SecResults]:
     """Fetch SEC filing metadata for the given ticker and year."""
+    company = company or olmocr_settings.sec_api_organization
+    email = email or olmocr_settings.sec_api_email
     cik = utils.get_cik_by_ticker(ticker)
     logger.info(f"For {ticker=} found {cik=}")
 
@@ -93,16 +97,19 @@ async def save_sec_results_as_pdfs(
     sec_results: list[SecResults],
     ticker: str,
     year: str,
-    company: str = "Indiana University Bloomington",
-    email: str = "astmohap@iu.edu",
+    company: str | None = None,
+    email: str | None = None,
 ) -> list[Path]:
-    """Save SEC results as PDF files."""
+    """Save SEC results as PDF files and persist metadata to ``sec_results.json``."""
+    company = company or olmocr_settings.sec_api_organization
+    email = email or olmocr_settings.sec_api_email
     cik = utils.get_cik_by_ticker(ticker)
     rgld_cik = int(cik.lstrip("0"))
     output_dir = Path("sec_data") / f"{ticker}-{year}"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     filings_to_save = [
-        FilingToSave(
+        utils.FilingToSave(
             cik=rgld_cik,
             accession_number=sr.dashes_acc_num,
             primary_document=sr.primary_document,
@@ -117,8 +124,28 @@ async def save_sec_results_as_pdfs(
         email=email,
     )
 
-    logger.info(f"Saved {len(pdf_paths)} PDFs to {output_dir}")
+    # Persist metadata so filing dates are available without re-hitting SEC API.
+    json_path = output_dir / "sec_results.json"
+    json_path.write_text(
+        json.dumps([asdict(sr) for sr in sec_results], indent=2),
+        encoding="utf-8",
+    )
+
+    logger.info(f"Saved {len(pdf_paths)} PDFs and metadata to {output_dir}")
     return pdf_paths
+
+
+def load_sec_results(ticker: str, year: str) -> list[SecResults]:
+    """Load previously persisted SEC filing metadata from ``sec_results.json``.
+
+    Returns an empty list if the file does not yet exist (i.e. filings have
+    not been downloaded yet for this ticker/year).
+    """
+    json_path = Path("sec_data") / f"{ticker}-{year}" / "sec_results.json"
+    if not json_path.exists():
+        return []
+    records = json.loads(json_path.read_text(encoding="utf-8"))
+    return [SecResults(**r) for r in records]
 
 
 async def sec_main(
@@ -126,8 +153,6 @@ async def sec_main(
     year: str,
     filing_types: list[str] = ["10-K", "10-Q"],
     include_amends: bool = True,
-    company: str = "Indiana University Bloomington",
-    email: str = "astmohap@iu.edu",
 ) -> tuple[list[SecResults], list[Path]]:
     """Fetch SEC results and save them as PDFs."""
     sec_results = get_sec_results(
@@ -135,18 +160,38 @@ async def sec_main(
         year=year,
         filing_types=filing_types,
         include_amends=include_amends,
-        company=company,
-        email=email,
     )
     pdf_paths = await save_sec_results_as_pdfs(
         sec_results=sec_results,
         ticker=ticker,
         year=year,
-        company=company,
-        email=email,
     )
     return sec_results, pdf_paths
 
 
 if __name__ == "__main__":
-    data = asyncio.run(sec_main(ticker="NVDA", year="2025"))
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Fetch SEC filings and save as PDFs")
+    parser.add_argument("--ticker", type=str, required=True, help="Stock ticker symbol")
+    parser.add_argument("--year", type=str, required=True, help="Filing year")
+    parser.add_argument(
+        "--filing-types",
+        nargs="+",
+        default=["10-K", "10-Q"],
+        help="Filing types to fetch",
+    )
+    parser.add_argument(
+        "--include-amends", type=bool, default=True, help="Include amended filings"
+    )
+
+    args = parser.parse_args()
+
+    asyncio.run(
+        sec_main(
+            ticker=args.ticker,
+            year=args.year,
+            filing_types=args.filing_types,
+            include_amends=args.include_amends,
+        )
+    )

@@ -1,0 +1,20 @@
+"""Dataloader for SEC filings: fetch, OCR, embed, and vector search."""
+
+from .pipeline import ensure_sec_data, prepare_sec_filing_envs
+from .repl_env import MarkdownReplEnvironment, markdown_to_repl_env
+from .chunker import Chunk, chunk_markdown
+from .vector_store import (
+    FaissVectorIndex,
+    embed_chunks,
+)
+
+__all__ = [
+    "ensure_sec_data",
+    "prepare_sec_filing_envs",
+    "MarkdownReplEnvironment",
+    "markdown_to_repl_env",
+    "Chunk",
+    "FaissVectorIndex",
+    "chunk_markdown",
+    "embed_chunks",
+]
