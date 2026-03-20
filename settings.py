@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class OlmoOCRSettings(BaseSettings):
+class EnvSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # SEC API (required for filings; SEC requires User-Agent with org + email)
@@ -25,4 +25,4 @@ class OlmoOCRSettings(BaseSettings):
     faiss_use_gpu: bool = True
 
 
-olmocr_settings = OlmoOCRSettings()
+env_settings = EnvSettings()

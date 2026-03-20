@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import NamedTuple, Sequence
 import faiss
 
-from settings import olmocr_settings
+from settings import env_settings
 import numpy as np
 from openai import OpenAI
 
@@ -130,12 +130,10 @@ class FaissVectorIndex:
         embedding_model: str | None = None,
         use_gpu: bool | None = None,
     ) -> None:
-        self._index_dir = Path(index_dir or olmocr_settings.faiss_index_dir)
-        self._embedding_server = embedding_server or olmocr_settings.embedding_server
-        self._embedding_model = embedding_model or olmocr_settings.embedding_model
-        self._use_gpu = (
-            use_gpu if use_gpu is not None else olmocr_settings.faiss_use_gpu
-        )
+        self._index_dir = Path(index_dir or env_settings.faiss_index_dir)
+        self._embedding_server = embedding_server or env_settings.embedding_server
+        self._embedding_model = embedding_model or env_settings.embedding_model
+        self._use_gpu = use_gpu if use_gpu is not None else env_settings.faiss_use_gpu
         self._cache: dict[IndexKey, _FilingData] = {}
 
     def _key_path(self, key: IndexKey) -> Path:
@@ -306,7 +304,7 @@ class FaissVectorIndex:
         list[IndexKey]
             Keys for every index that was built/found.
         """
-        workspace_str = str(workspace or olmocr_settings.olmocr_workspace)
+        workspace_str = str(workspace or env_settings.olmocr_workspace)
 
         sec_results, _ = await ensure_sec_data(
             ticker=ticker,

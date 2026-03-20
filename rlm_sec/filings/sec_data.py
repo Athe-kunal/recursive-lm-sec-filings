@@ -9,12 +9,12 @@ from pathlib import Path
 from loguru import logger
 
 from rlm_sec.filings import utils
-from settings import olmocr_settings
+from settings import env_settings
 
 
 def sec_data_case_dir(ticker: str, year: str) -> Path:
     """Directory for one ticker/year: ``{sec_data_dir}/{ticker}-{year}/``."""
-    return Path(olmocr_settings.sec_data_dir) / f"{ticker}-{year}"
+    return Path(env_settings.sec_data_dir) / f"{ticker}-{year}"
 
 
 @dataclass(frozen=True)
@@ -35,8 +35,8 @@ def get_sec_results(
     email: str | None = None,
 ) -> list[SecResults]:
     """Fetch SEC filing metadata for the given ticker and year."""
-    company = company or olmocr_settings.sec_api_organization
-    email = email or olmocr_settings.sec_api_email
+    company = company or env_settings.sec_api_organization
+    email = email or env_settings.sec_api_email
     cik = utils.get_cik_by_ticker(ticker)
     logger.info(f"For {ticker=} found {cik=}")
 
@@ -106,8 +106,8 @@ async def save_sec_results_as_pdfs(
     email: str | None = None,
 ) -> list[Path]:
     """Save SEC results as PDF files and persist metadata to ``sec_results.json``."""
-    company = company or olmocr_settings.sec_api_organization
-    email = email or olmocr_settings.sec_api_email
+    company = company or env_settings.sec_api_organization
+    email = email or env_settings.sec_api_email
     cik = utils.get_cik_by_ticker(ticker)
     rgld_cik = int(cik.lstrip("0"))
     output_dir = sec_data_case_dir(ticker, year)
