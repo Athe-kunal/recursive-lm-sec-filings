@@ -9,14 +9,14 @@ Pipeline for fetching SEC filings and converting them to markdown via OCR.
 | Function | Description |
 |---|---|
 | `company_to_ticker(name)` | Resolve a company name to its ticker symbol via Yahoo Finance. |
-| `fetch_sec_filings(ticker, year, ...)` | Download SEC filings as PDFs into `sec_data/{ticker}-{year}/`. Skips PDFs that already exist. |
+| `fetch_sec_filings(ticker, year, ...)` | Download SEC filings as PDFs into `{sec_data_dir}/{ticker}-{year}/` (see `sec_data_dir` in settings). Skips PDFs that already exist. |
 | `run_ocr_on_filings(pdf_dir, ...)` | Run olmOCR on a PDF directory and return markdown file paths. The pipeline skips already-processed files via done-flags. |
 | `load_sec_filings(ticker, year, ...)` | End-to-end: fetch PDFs → run OCR → return markdown paths. |
 
 ### Key paths
 
-- PDFs: `sec_data/{ticker}-{year}/{form_name}.pdf`
-- Markdowns: `localworkspace/markdown/sec_data/{ticker}-{year}/{form_name}.md`
+- PDFs: `{sec_data_dir}/{ticker}-{year}/{form_name}.pdf` (default `sec_data_dir` = `sec_data`)
+- Markdowns: `localworkspace/markdown/{sec_data_dir}/{ticker}-{year}/{form_name}.md`
 
 ### Requirements
 
@@ -30,7 +30,7 @@ The REPL loader helpers can be called with only `ticker`, `year`, `filing_types`
 
 - `SEC_COMPANY` (default: `<company-name>`)
 - `SEC_EMAIL` (default: `<email>`)
-- `SEC_PDF_BASE_DIR` (default: `sec_data`)
+- `SEC_DATA_DIR` (default: `sec_data`) — local folder for downloaded PDFs and `sec_results.json`
 - `OLMOCR_WORKSPACE` (default: `localworkspace`)
 - `OLMOCR_SERVER` (default: `http://localhost:8000/v1`)
 - `OLMOCR_MODEL` (default: `allenai/olmOCR-2-7B-1025-FP8`)

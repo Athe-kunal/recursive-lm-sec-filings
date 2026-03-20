@@ -12,6 +12,11 @@ from rlm_sec.filings import utils
 from settings import olmocr_settings
 
 
+def sec_data_case_dir(ticker: str, year: str) -> Path:
+    """Directory for one ticker/year: ``{sec_data_dir}/{ticker}-{year}/``."""
+    return Path(olmocr_settings.sec_data_dir) / f"{ticker}-{year}"
+
+
 @dataclass(frozen=True)
 class SecResults:
     dashes_acc_num: str
@@ -105,7 +110,7 @@ async def save_sec_results_as_pdfs(
     email = email or olmocr_settings.sec_api_email
     cik = utils.get_cik_by_ticker(ticker)
     rgld_cik = int(cik.lstrip("0"))
-    output_dir = Path("sec_data") / f"{ticker}-{year}"
+    output_dir = sec_data_case_dir(ticker, year)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     filings_to_save = [
@@ -141,7 +146,7 @@ def load_sec_results(ticker: str, year: str) -> list[SecResults]:
     Returns an empty list if the file does not yet exist (i.e. filings have
     not been downloaded yet for this ticker/year).
     """
-    json_path = Path("sec_data") / f"{ticker}-{year}" / "sec_results.json"
+    json_path = sec_data_case_dir(ticker, year) / "sec_results.json"
     if not json_path.exists():
         return []
     records = json.loads(json_path.read_text(encoding="utf-8"))

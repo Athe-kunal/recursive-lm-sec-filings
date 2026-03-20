@@ -42,6 +42,7 @@ from olmocr.train.dataloader import FrontMatterParser
 from olmocr.version import VERSION
 from olmocr.work_queue import LocalBackend, WorkQueue
 
+from rlm_sec.filings.sec_data import sec_data_case_dir
 from settings import olmocr_settings
 
 DEFAULT_SERVER = olmocr_settings.olmocr_server
@@ -1471,7 +1472,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--pdf-dir",
         type=str,
-        default="sec_data/AMZN-2025",
+        default=sec_data_case_dir("AMZN", "2025").as_posix(),
         help="Directory containing PDFs to OCR",
     )
     args = parser.parse_args()

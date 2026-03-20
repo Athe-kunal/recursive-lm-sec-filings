@@ -213,3 +213,5 @@ output/
 localworkspace/
 
 data/
+
+faiss_indexes
