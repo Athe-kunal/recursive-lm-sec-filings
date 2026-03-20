@@ -43,11 +43,11 @@ from olmocr.version import VERSION
 from olmocr.work_queue import LocalBackend, WorkQueue
 
 from rlm_sec.filings.sec_data import sec_data_case_dir
-from settings import olmocr_settings
+from settings import env_settings
 
-DEFAULT_SERVER = olmocr_settings.olmocr_server
-DEFAULT_MODEL = olmocr_settings.olmocr_model
-DEFAULT_WORKSPACE = olmocr_settings.olmocr_workspace
+DEFAULT_SERVER = env_settings.olmocr_server
+DEFAULT_MODEL = env_settings.olmocr_model
+DEFAULT_WORKSPACE = env_settings.olmocr_workspace
 
 
 # Loguru: same format as before (asctime - name - levelname - message)
