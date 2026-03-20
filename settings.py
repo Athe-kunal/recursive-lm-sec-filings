@@ -22,7 +22,10 @@ class EnvSettings(BaseSettings):
 
     # FAISS vector index persistence
     faiss_index_dir: str = "./faiss_indexes"
-    faiss_use_gpu: bool = True
+    faiss_use_gpu: bool = False
+
+    # FastAPI server URL
+    server_url: str = "http://127.0.0.1:8888"
 
 
 env_settings = EnvSettings()

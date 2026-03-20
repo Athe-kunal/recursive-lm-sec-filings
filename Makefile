@@ -1,13 +1,14 @@
 MODEL := allenai/olmOCR-2-7B-1025-FP8
 
 GPU_MEMORY_UTILIZATION ?= 0.97
-EMBD_GPU_MEMORY_UTILIZATION ?= 0.5
+EMBD_GPU_MEMORY_UTILIZATION ?= 0.1
 EMBD_MODEL ?= Qwen/Qwen3-Embedding-0.6B
 EMBD_PORT ?= 8002
 MAX_MODEL_LEN          ?= 16384
 TENSOR_PARALLEL_SIZE   ?= 2
 DATA_PARALLEL_SIZE     ?= 1
 PORT                   ?= 8000
+API_PORT               ?= 8888
 SERVER                 ?= localhost
 
 .PHONY: vllm-olmocr-serve

@@ -4,7 +4,7 @@ import requests
 import uuid
 import time
 import threading
-from typing import Tuple, Optional, Any, Dict
+from typing import Tuple, Optional, Any, Dict, List
 from urllib.parse import urlparse
 
 from skyrl_gym.tools.core import tool, ToolGroup
@@ -20,32 +20,42 @@ INITIAL_RETRY_DELAY = 1
 def call_search_api(
     retrieval_service_url: str,
     query: str,
+    ticker: str,
+    year: str,
+    filing_type: str,
     topk: int = 3,
-    return_scores: bool = True,
     timeout: int = DEFAULT_TIMEOUT,
     log_requests: bool = True,
     session: Optional[requests.Session] = None,
-) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+) -> Tuple[Optional[Any], Optional[str]]:
     """
-    Calls the search API with a single query.
+    Calls the vector store search API for one filing.
 
     Args:
-        retrieval_service_url: The URL of the search API.
-        query: The query to search for.
-        topk: The number of results to return.
-        return_scores: Whether to return scores for the results.
-        timeout: The timeout for the request.
+        retrieval_service_url: The URL of the search API (e.g. /vector_store/search).
+        query: Semantic search query text.
+        ticker: Stock symbol for the filing.
+        year: Filing year.
+        filing_type: SEC filing type (e.g. 10-K, 10-Q1).
+        topk: Number of chunks to return (sent as top_k in the JSON body).
+        timeout: Request timeout in seconds.
         log_requests: Whether to log requests.
-        session: The session to use for the request. If none is provided, a new session will be created.
+        session: Optional shared requests.Session.
 
     Returns:
-        response: The response from the search API (json if successful, None otherwise)
-        error_msg: The error message if the request failed.
+        Parsed JSON body (list of chunk dicts on success), or None on failure.
+        error_msg: Error message if the request failed.
     """
     request_id = str(uuid.uuid4())
     log_prefix = f"[Search Request ID: {request_id}] "
 
-    payload = {"query": query, "topk": topk, "return_scores": return_scores}
+    payload = {
+        "ticker": ticker,
+        "year": year,
+        "filing_type": filing_type,
+        "query": query,
+        "top_k": topk,
+    }
     headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
     # Use provided session or create a new one for this request
@@ -133,12 +143,13 @@ def call_search_api(
     return None, last_error
 
 
-def _passages2string(retrieval_result):
-    format_reference = ""
-    for idx, doc_item in enumerate(retrieval_result):
-        content = doc_item["document"]["contents"].strip()
-        format_reference += f"Doc {idx+1}: {content}\n"
-    return format_reference
+def _vector_chunks_to_string(chunks: List[Dict[str, Any]]) -> str:
+    """Format vector search API chunk list (ChunkResult JSON) for the model."""
+    lines = []
+    for idx, chunk in enumerate(chunks):
+        text = chunk.get("text", "").strip()
+        lines.append(f"Doc {idx + 1}: {text}\n")
+    return "".join(lines)
 
 
 class SearchToolGroup(ToolGroup):
@@ -167,10 +178,10 @@ class SearchToolGroup(ToolGroup):
 
     def __init__(
         self,
-        search_url="http://127.0.0.1:8000/retrieve",
-        topk=3,
-        timeout=DEFAULT_TIMEOUT,
-        log_requests=True,
+        search_url: str,
+        topk: int = 3,
+        timeout: int = DEFAULT_TIMEOUT,
+        log_requests: bool = True,
     ):
         self.search_url = search_url
         self.topk = topk
@@ -191,21 +202,34 @@ class SearchToolGroup(ToolGroup):
         super().__init__(name="SearchToolGroup")
 
     @tool
-    def search(self, query: str) -> str:
-        # NOTE(shu): add warning messages here?
-        if query is None:
+    def search(
+        self,
+        query: str,
+        ticker: str,
+        year: str,
+        filing_type: str,
+    ) -> str:
+        if query is None or ticker is None or year is None or filing_type is None:
             return ""
 
         query = query.strip()
+        ticker = ticker.strip()
+        year = year.strip()
+        filing_type = filing_type.strip()
 
+        api_response = None
+        error_msg = None
         try:
             api_response, error_msg = call_search_api(
                 retrieval_service_url=self.search_url,
                 query=query,
+                ticker=ticker,
+                year=year,
+                filing_type=filing_type,
                 topk=self.topk,
                 timeout=self.timeout,
                 log_requests=self.log_requests,
-                session=self.session,  # Pass our shared session for connection reuse
+                session=self.session,
             )
         except Exception as e:
             error_msg = f"API Request Exception during batch search: {e}"
@@ -213,6 +237,9 @@ class SearchToolGroup(ToolGroup):
 
         metadata = {
             "query": query,
+            "ticker": ticker,
+            "year": year,
+            "filing_type": filing_type,
             "api_request_error": error_msg,
             "api_response": None,
             "status": "unknown",
@@ -220,55 +247,48 @@ class SearchToolGroup(ToolGroup):
             "formatted_result": None,
         }
 
-        result_text = json.dumps(
-            {"result": "Search request failed or timed out after retries."}
-        )
+        result_text = "Search request failed or timed out after retries."
 
         if error_msg:
             metadata["status"] = "api_error"
-            result_text = json.dumps({"result": f"Search error: {error_msg}"})
+            result_text = f"Search error: {error_msg}"
             logger.error(f"Batch search: API error occurred: {error_msg}")
-        elif api_response:
+        elif api_response is not None:
             logger.debug(f"Batch search: API Response: {api_response}")
             metadata["api_response"] = api_response
 
             try:
-                raw_results = api_response.get("result", [])
-                if raw_results:
-                    pretty_results = []
-                    total_results = 0
-                    for retrieval in raw_results:
-                        formatted = _passages2string(retrieval)
-                        pretty_results.append(formatted)
-                        total_results += (
-                            len(retrieval) if isinstance(retrieval, list) else 1
-                        )
-
-                    final_result = "\n---\n".join(pretty_results)
-                    result_text = json.dumps({"result": final_result})
+                if isinstance(api_response, list) and api_response:
+                    final_result = _vector_chunks_to_string(api_response)
+                    result_text = final_result
                     metadata["status"] = "success"
-                    metadata["total_results"] = total_results
+                    metadata["total_results"] = len(api_response)
                     metadata["formatted_result"] = final_result
                     if self.log_requests:
                         logger.info(
-                            f"Batch search: Successful, got {total_results} total results"
+                            "Batch search: Successful, got %s chunks",
+                            len(api_response),
                         )
-                else:
-                    result_text = json.dumps({"result": "No search results found."})
+                elif isinstance(api_response, list):
+                    result_text = "No search results found."
                     metadata["status"] = "no_results"
                     metadata["total_results"] = 0
                     if self.log_requests:
                         logger.info("Batch search: No results found")
+                else:
+                    result_text = (
+                        "Unexpected API response shape "
+                        "(expected a JSON list of chunks)."
+                    )
+                    metadata["status"] = "processing_error"
             except Exception as e:
                 error_msg = f"Error processing search results: {e}"
-                result_text = json.dumps({"result": error_msg})
+                result_text = error_msg
                 metadata["status"] = "processing_error"
                 logger.error(f"Batch search: {error_msg}")
         else:
             metadata["status"] = "unknown_api_state"
-            result_text = json.dumps(
-                {"result": "Unknown API state (no response and no error message)."}
-            )
+            result_text = "Unknown API state (no response and no error message)."
             logger.error("Batch search: Unknown API state.")
 
         return result_text

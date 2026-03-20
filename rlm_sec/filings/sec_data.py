@@ -160,6 +160,8 @@ async def sec_main(
     include_amends: bool = True,
 ) -> tuple[list[SecResults], list[Path]]:
     """Fetch SEC results and save them as PDFs."""
+    ticker_name = utils.company_to_ticker(ticker)
+    assert ticker_name, f"The {ticker=} that you provided, is not valid"
     sec_results = get_sec_results(
         ticker=ticker,
         year=year,

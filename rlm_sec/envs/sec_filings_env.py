@@ -4,41 +4,31 @@ from skyrl_gym.envs.base_text_env import (
     ConversationType,
 )
 from typing import Any
-from skyrl_gym.envs.search.utils import compute_score
+from rlm_sec.envs.rewards import compute_score
 from rlm_sec.envs.tools import SearchToolGroup
 import re
-from typing import Dict, Optional, List, Union
+from typing import Dict, Optional, List, Union, Tuple
 from dataclasses import dataclass
 from omegaconf import DictConfig
+
+from settings import env_settings
 
 
 @dataclass
 class SearchEnvConfig:
     log_requests: bool = False
-    search_url: str = "http://127.0.0.1:8000/retrieve"
+    search_url: str = f"{env_settings.server_url}/vector_store/search"
     topk: int = 3
     timeout: int = 30
 
 
 class SECSearchEnv(BaseTextEnv):
-    """
-    Environment for Search execution tasks.
-
-    Based on Verl + Search-R1 integration
-    """
-
     def __init__(
         self,
         env_config: Union[SearchEnvConfig, DictConfig],
         extras: Dict[str, Any] = {},
     ):
         super().__init__()
-
-        assert "reward_spec" in extras, "reward_spec field is required"
-        assert (
-            "ground_truth" in extras["reward_spec"]
-        ), "ground_truth is required in reward_spec field"
-        self.ground_truth = extras["reward_spec"]["ground_truth"]
         self.max_turns = extras["max_turns"] if "max_turns" in extras else 2
 
         # Initialize the tools
@@ -55,11 +45,21 @@ class SECSearchEnv(BaseTextEnv):
         # role (user, assistant), content (tool observation or LLM response)
         self.chat_history: ConversationType = []
 
-    def _parse_action(self, action: str) -> List[Optional[str]]:
-        match = None
-        if "<search>" in action and "</search>" in action:
-            match = re.search(r"<search>(.*?)</search>", action, re.DOTALL)
-        return [match.group(1)] if match else [None]
+    def _parse_action(self, action: str) -> Optional[Tuple[str, str, str, str]]:
+        """Parse ``<search>query, ticker, year, filing_type</search>`` from the action.
+
+        The query field may contain commas; the last three comma-separated segments
+        are interpreted as ticker, year, and filing_type.
+        """
+        match = re.search(r"<search>(.*?)</search>", action, re.DOTALL)
+        if not match:
+            return None
+        inner = match.group(1).strip()
+        parts = inner.rsplit(",", 3)
+        if len(parts) != 4:
+            return None
+        query, ticker, year, filing_type = (p.strip() for p in parts)
+        return (query, ticker, year, filing_type)
 
     def _get_reward(self, action: str, done: bool) -> float:
         if done:
@@ -79,8 +79,7 @@ class SECSearchEnv(BaseTextEnv):
         self, tool_group_name: str, tool_name: str, tool_input: Any
     ) -> str:
         tool_output = super()._execute_tool(tool_group_name, tool_name, tool_input)
-
-        return "\n<information>" + tool_output + "</information>\n"
+        return "\n<information>\n" + tool_output + "</information>\n"
 
     def step(self, action: str) -> BaseTextEnvStepOutput:
         self.turns += 1
@@ -95,9 +94,23 @@ class SECSearchEnv(BaseTextEnv):
                 observations=[], reward=reward, done=done, metadata={}
             )
 
+        tool_input = None
         try:
-            query = self._parse_action(action)
-            observation = self._execute_tool("SearchToolGroup", "search", query)
+            if "<search>" not in action or "</search>" not in action:
+                observation = "\n<information></information>\n"
+            else:
+                parsed = self._parse_action(action)
+                tool_input = parsed
+                if parsed is None:
+                    observation = (
+                        "\n<information>Invalid <search> format. Expected: "
+                        "query, ticker, year, filing_type (comma-separated; "
+                        "the query may contain commas).</information>\n"
+                    )
+                else:
+                    observation = self._execute_tool(
+                        "SearchToolGroup", "search", list(parsed)
+                    )
         except Exception as e:
             error = str(e)
             observation = None
@@ -114,7 +127,7 @@ class SECSearchEnv(BaseTextEnv):
         info = {
             "tool_group": "SearchToolGroup",
             "tool_name": "search",
-            "tool_input": query,
+            "tool_input": tool_input,
         }
 
         # Update chat history
