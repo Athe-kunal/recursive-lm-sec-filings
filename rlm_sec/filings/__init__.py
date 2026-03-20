@@ -1,4 +1,10 @@
-from .sec_data import SecResults, get_sec_results, save_sec_results_as_pdfs, load_sec_results
+from .sec_data import (
+    SecResults,
+    get_sec_results,
+    load_sec_results,
+    save_sec_results_as_pdfs,
+    sec_data_case_dir,
+)
 from .utils import archive_url, document_url, get_cik_by_ticker
 from .utils import FilingToSave, save_filings_as_pdfs
 
@@ -7,6 +13,7 @@ __all__ = [
     "get_sec_results",
     "save_sec_results_as_pdfs",
     "load_sec_results",
+    "sec_data_case_dir",
     "archive_url",
     "document_url",
     "get_cik_by_ticker",

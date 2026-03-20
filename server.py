@@ -5,10 +5,10 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from dataloader.vector_store import FaissVectorIndex
-from filings.utils import company_to_ticker
-from filings.sec_data import sec_main
-from ocr.olmocr_pipeline import run_olmo_ocr
+from rlm_sec.dataloader.vector_store import FaissVectorIndex
+from rlm_sec.filings.sec_data import sec_main
+from rlm_sec.filings.utils import company_to_ticker
+from rlm_sec.ocr.olmocr_pipeline import run_olmo_ocr
 from settings import olmocr_settings
 
 vector_index: FaissVectorIndex
@@ -109,7 +109,7 @@ class VectorEmbedRequest(BaseModel):
     """Build FAISS indexes from already-OCR'd markdown files.
 
     ``markdown_dir`` should be the folder that contains ``{filing_type}.md``
-    files (e.g. ``localworkspace/markdown/sec_data/AMZN-2025``).  All ``.md``
+    files (e.g. ``localworkspace/markdown/<sec_data_dir>/AMZN-2025``).  All ``.md``
     files found in that directory are indexed; the filing type is derived from
     each file's stem (e.g. ``10-Q1.md`` → ``"10-Q1"``).
     """

@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from filings.sec_data import (
+from rlm_sec.filings.sec_data import (
     SecResults,
     get_sec_results,
     save_sec_results_as_pdfs,
+    sec_data_case_dir,
 )
-from ocr.olmocr_pipeline import get_markdown_path, run_olmo_ocr
+from rlm_sec.ocr.olmocr_pipeline import get_markdown_path, run_olmo_ocr
 from settings import olmocr_settings
 
 from .repl_env import MarkdownReplEnvironment, markdown_to_repl_env
@@ -32,7 +33,7 @@ async def ensure_sec_data(
     """
     Ensure SEC filing PDFs exist locally. Download only missing files.
 
-    PDFs are stored in sec_data/{ticker}-{year}/ (per filings.sec_data).
+    PDFs are stored in ``{sec_data_dir}/{ticker}-{year}/`` (see settings).
 
     Returns:
         (sec_results matching filing_types, paths to all PDFs)
@@ -43,7 +44,7 @@ async def ensure_sec_data(
         filing_types=filing_types,
         include_amends=include_amends,
     )
-    output_dir = Path("sec_data") / f"{ticker}-{year}"
+    output_dir = sec_data_case_dir(ticker, year)
 
     filtered = [
         sr
@@ -88,13 +89,13 @@ async def prepare_sec_filing_envs(
         filing_type: One of "10-K" or "10-Q".
         include_amends: Include amended filings.
         workspace: olmOCR workspace (default from settings). Markdown is written
-            to workspace/markdown/sec_data/{ticker}-{year}/...
+            under ``workspace/markdown/<sec_data_dir>/{ticker}-{year}/``...
 
     Returns:
         List of MarkdownReplEnvironment, one per filing (e.g. 10-K or 10-Q1..10-Q4).
     """
     workspace_str = str(workspace or olmocr_settings.olmocr_workspace)
-    pdf_dir_str = f"sec_data/{ticker}-{year}"
+    pdf_dir_str = sec_data_case_dir(ticker, year).as_posix()
 
     filing_types = [filing_type]
     sec_results, _pdf_paths = await ensure_sec_data(
@@ -113,8 +114,8 @@ async def prepare_sec_filing_envs(
 
     envs: list[MarkdownReplEnvironment] = []
     # OCR writes markdown to workspace/markdown/<source_file>.md; source_file
-    # matches glob output (e.g. sec_data/GOOG-2025/10-K.pdf)
-    rel_pdf_base = f"sec_data/{ticker}-{year}"
+    # matches glob output (e.g. {sec_data_dir}/GOOG-2025/10-K.pdf)
+    rel_pdf_base = sec_data_case_dir(ticker, year).as_posix()
     for sr in sec_results:
         source_file = f"{rel_pdf_base}/{sr.form_name}.pdf"
         markdown_path_str = get_markdown_path(workspace_str, source_file)

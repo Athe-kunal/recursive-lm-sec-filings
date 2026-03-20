@@ -12,18 +12,21 @@ from settings import olmocr_settings
 import numpy as np
 from openai import OpenAI
 
-from filings.sec_data import load_sec_results
-from ocr.olmocr_pipeline import get_markdown_path, run_olmo_ocr
-from dataloader.pipeline import ensure_sec_data
-from dataloader.chunker import chunk_markdown, Chunk
+from rlm_sec.filings.sec_data import load_sec_results, sec_data_case_dir
+from rlm_sec.ocr.olmocr_pipeline import get_markdown_path, run_olmo_ocr
+
+from .chunker import Chunk, chunk_markdown
+from .pipeline import ensure_sec_data
 
 _log = logging.getLogger(__name__)
 _EMBED_BATCH_SIZE = 2048
+
 
 class IndexKey(NamedTuple):
     ticker: str
     year: str
     filing_type: str
+
 
 @dataclass
 class _FilingData:
@@ -212,7 +215,7 @@ class FaissVectorIndex:
 
     @staticmethod
     def _resolve_filing_date(ticker: str, year: str, filing_type: str) -> str | None:
-        """Look up filing_date from ``sec_data/{ticker}-{year}/sec_results.json``."""
+        """Look up filing_date from ``{sec_data_dir}/{ticker}-{year}/sec_results.json``."""
         results = load_sec_results(ticker, year)
         if not results:
             return None
@@ -232,7 +235,7 @@ class FaissVectorIndex:
 
         The filing type is extracted from each file's stem (e.g. ``10-Q1.md``
         → ``"10-Q1"``).  The filing date is looked up automatically from
-        ``sec_data/{ticker}-{year}/sec_results.json`` when available.
+        ``{sec_data_dir}/{ticker}-{year}/sec_results.json`` when available.
 
         Parameters
         ----------
@@ -317,8 +320,9 @@ class FaissVectorIndex:
             )
             return []
 
+        case_posix = sec_data_case_dir(ticker, year).as_posix()
         await run_olmo_ocr(
-            pdf_dir=f"sec_data/{ticker}-{year}",
+            pdf_dir=case_posix,
             workspace=workspace_str,
         )
 
@@ -326,7 +330,8 @@ class FaissVectorIndex:
         for sr in sec_results:
             md_path = Path(
                 get_markdown_path(
-                    workspace_str, f"sec_data/{ticker}-{year}/{sr.form_name}.pdf"
+                    workspace_str,
+                    f"{case_posix}/{sr.form_name}.pdf",
                 )
             )
             if not md_path.exists():

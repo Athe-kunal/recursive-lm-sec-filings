@@ -13,8 +13,11 @@ class OlmoOCRSettings(BaseSettings):
     olmocr_model: str = "allenai/olmOCR-2-7B-1025-FP8"
     olmocr_workspace: str = "./localworkspace"
 
+    # Downloaded SEC PDFs and sec_results.json: {sec_data_dir}/{ticker}-{year}/
+    sec_data_dir: str = "sec_data"
+
     # Embedding server (vLLM pooling runner)
-    embedding_server: str = "http://127.0.0.1:8888/v1"
+    embedding_server: str = "http://127.0.0.1:8002/v1"
     embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"
 
     # FAISS vector index persistence
