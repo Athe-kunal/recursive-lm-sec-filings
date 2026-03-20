@@ -175,14 +175,6 @@ def vector_store_list_filings(request: ListFilingsRequest):
     return vector_index.list_filings(request.ticker, request.year)
 
 
-class VectorSearchRequest(BaseModel):
-    ticker: str
-    year: str
-    filing_type: str
-    query: str
-    top_k: int = 5
-
-
 class ChunkResult(BaseModel):
     text: str
     chunk_type: str
@@ -190,6 +182,14 @@ class ChunkResult(BaseModel):
     section_title: str | None
     chunk_index: int
     score: float
+
+
+class VectorSearchRequest(BaseModel):
+    ticker: str
+    year: str
+    filing_type: str
+    query: str
+    top_k: int = 5
 
 
 @app.post("/vector_store/search", response_model=list[ChunkResult])

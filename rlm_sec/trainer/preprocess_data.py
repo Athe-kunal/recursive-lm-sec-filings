@@ -10,9 +10,7 @@ def make_map_fn():
     def process_fn(example: dict, idx: int) -> dict:
         return {
             "data_source": example["data_source"],
-            "prompt": [
-                {"role": "user", "content": example["question"]},
-            ],
+            "prompt": example["prompt"],
             "env_class": "null",
             "answer": example["answer"],
             "context": example["context"],
