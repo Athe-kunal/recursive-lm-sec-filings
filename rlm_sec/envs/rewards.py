@@ -1,5 +1,53 @@
 import re
 import string
+import datetime
+
+_TICKER_SYMBOL_RE = re.compile(r"^(?:[A-Z]{1,5}|[A-Z]{1,4}\.[A-Z])$")
+_VALID_FILING_TYPES = frozenset({"10-K", "10-Q1", "10-Q2", "10-Q3"})
+
+
+def _reward_ticker(ticker: str) -> float:
+    """Return 1 if *ticker* looks like a US stock symbol, else 0."""
+    normalized = ticker.strip()
+    if not normalized:
+        return 0.0
+    if _TICKER_SYMBOL_RE.fullmatch(normalized):
+        return 1 / 3
+    return 0.0
+
+
+def _reward_year(year: str) -> float:
+    if not len(year) != 4:
+        return 0.0
+    curr_year = datetime.datetime.now().year
+    output_year = int(year)
+    if output_year <= curr_year:
+        return 1 / 3
+    return 0.0
+
+
+def _reward_filing_type(filing_type: str) -> float:
+    """Return 1 if *filing_type* is 10-K or 10-Q1..10-Q3, else 0.
+
+    Quarter labels match stored stems (e.g. ``10-Q3`` is the third 10-Q).
+    """
+    normalized = filing_type.strip().upper()
+    if not normalized:
+        return 0.0
+    if normalized in _VALID_FILING_TYPES:
+        return 1 / 3
+    return 0.0
+
+
+def reward_action_format(action_str: str) -> float:
+    parts = [part.strip() for part in action_str.split(",")]
+    if len(parts) != 4:
+        return 0
+    _, ticker, year, filing_type = parts
+    ticker_reward = _reward_ticker(ticker)
+    year_reward = _reward_year(year)
+    filing_reward = _reward_filing_type(filing_type)
+    return ticker_reward + year_reward + filing_reward
 
 
 def normalize_answer(s):
