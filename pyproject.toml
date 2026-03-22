@@ -9,6 +9,7 @@ dependencies = [
     "aiohttp>=3.13.3",
     "black>=26.3.0",
     "datasets>=4.6.1",
+    "finance-data-llm>=0.1.0",
     "ipykernel>=7.2.0",
     "loguru>=0.7.3",
     "olmocr>=0.4.25",
@@ -37,6 +38,9 @@ paddle-ocr = [
     "paddlepaddle==3.2.0",
     "paddlex>=3.4.2",
 ]
+
+[project.scripts]
+finance-data-llm-server = "finance_data.cli:main"
 
 [tool.uv]
 environments = ["sys_platform == 'linux' and python_version >= '3.11'"]

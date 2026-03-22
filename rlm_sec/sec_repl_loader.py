@@ -3,8 +3,9 @@ from code import InteractiveConsole
 from dataclasses import dataclass
 from pathlib import Path
 import functools
-from src.sec_data_utils.sec_data import SecResults
-from src.sec_dataloader import load_sec_filings
+
+from finance_data_llm.sec_data_utils.sec_data import SecResults
+from finance_data_llm.sec_dataloader import load_sec_filings
 
 
 @dataclass

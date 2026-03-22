@@ -8,18 +8,22 @@ from pathlib import Path
 from typing import NamedTuple, Sequence
 import faiss
 
+from finance_data_llm.sec_data_utils.sec_data import load_sec_results, sec_data_case_dir
+from finance_data_llm.sec_dataloader import run_ocr_on_filings
 from settings import env_settings
 import numpy as np
 from openai import OpenAI
-
-from rlm_sec.filings.sec_data import load_sec_results, sec_data_case_dir
-from rlm_sec.ocr.olmocr_pipeline import get_markdown_path, run_olmo_ocr
 
 from .chunker import Chunk, chunk_markdown
 from .pipeline import ensure_sec_data
 
 _log = logging.getLogger(__name__)
 _EMBED_BATCH_SIZE = 2048
+
+
+def get_markdown_path(workspace: str, source_file: str) -> str:
+    """Return markdown output path used by the shared OCR pipeline."""
+    return str((Path(workspace) / "markdown" / f"{source_file}.md").as_posix())
 
 
 class IndexKey(NamedTuple):
@@ -319,7 +323,7 @@ class FaissVectorIndex:
             return []
 
         case_posix = sec_data_case_dir(ticker, year).as_posix()
-        await run_olmo_ocr(
+        await run_ocr_on_filings(
             pdf_dir=case_posix,
             workspace=workspace_str,
         )

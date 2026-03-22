@@ -4,16 +4,21 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rlm_sec.filings.sec_data import (
+from finance_data_llm.sec_data_utils.sec_data import (
     SecResults,
     get_sec_results,
     save_sec_results_as_pdfs,
     sec_data_case_dir,
 )
-from rlm_sec.ocr.olmocr_pipeline import get_markdown_path, run_olmo_ocr
+from finance_data_llm.sec_dataloader import run_ocr_on_filings
 from settings import env_settings
 
 from .repl_env import MarkdownReplEnvironment, markdown_to_repl_env
+
+
+def get_markdown_path(workspace: str, source_file: str) -> str:
+    """Return markdown output path used by the shared OCR pipeline."""
+    return str((Path(workspace) / "markdown" / f"{source_file}.md").as_posix())
 
 
 def _matches_filing_type(sec_result: SecResults, filing_type: str) -> bool:
@@ -108,7 +113,7 @@ async def prepare_sec_filing_envs(
     if not sec_results:
         return []
 
-    await run_olmo_ocr(
+    await run_ocr_on_filings(
         pdf_dir=pdf_dir_str,
         workspace=workspace_str,
     )
