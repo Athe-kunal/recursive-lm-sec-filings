@@ -39,6 +39,9 @@ paddle-ocr = [
     "paddlex>=3.4.2",
 ]
 
+[project.scripts]
+finance-data-llm-server = "finance_data.cli:main"
+
 [tool.uv]
 environments = ["sys_platform == 'linux' and python_version >= '3.11'"]
 # cached-path (via olmocr) requires rich<14; skyrl requires rich>=14.1. Override to allow skyrl-train.
