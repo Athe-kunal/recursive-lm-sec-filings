@@ -108,7 +108,7 @@ uv run --isolated --frozen --extra fsdp -m rlm_sec.trainer.skyrl_main \
   environment.skyrl_gym.search.search_url="http://127.0.0.1:8888/vector_store/search" \
   environment.skyrl_gym.search.topk=3 \
   trainer.logger="wandb" \
-  trainer.project_name="skyrl-search" \
+  trainer.project_name="skyrl-finance-search" \
   trainer.run_name="${RUN_NAME}" \
   trainer.ckpt_interval=20 \
   trainer.hf_save_interval=100 \
