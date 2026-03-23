@@ -3,7 +3,7 @@
 SkyRL's built-in ``search`` environment calls a generic ``/retrieve`` API with a
 single query. This repo's training data and ``server.py`` expect
 ``SECSearchEnv`` (query, ticker, year, filing_type) posting to
-``/vector_store/search``. Importing ``skyrl_gym.envs`` and then replacing the
+``/vector_store/search_sec_filings``. Importing ``skyrl_gym.envs`` and then replacing the
 registry entry keeps ``environment.env_class=search`` and
 ``environment.skyrl_gym.search.*`` Hydra keys unchanged.
 """

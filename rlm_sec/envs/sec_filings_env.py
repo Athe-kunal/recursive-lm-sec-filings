@@ -13,11 +13,13 @@ from omegaconf import DictConfig
 
 from settings import env_settings
 
+SEARCH_SEC_FILINGS_ENDPOINT = "/vector_store/search_sec_filings"
+
 
 @dataclass
 class SearchEnvConfig:
     log_requests: bool = False
-    search_url: str = f"{env_settings.server_url}/vector_store/search"
+    search_url: str = f"{env_settings.server_url}{SEARCH_SEC_FILINGS_ENDPOINT}"
     topk: int = 3
     timeout: int = 30
 
