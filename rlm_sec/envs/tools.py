@@ -1,12 +1,12 @@
 import json
 import logging
-import requests
-import uuid
-import time
 import threading
-from typing import Tuple, Optional, Any, Dict, List
+import time
+import uuid
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
+import requests
 from skyrl_gym.tools.core import tool, ToolGroup
 
 logger = logging.getLogger(__name__)
@@ -15,6 +15,23 @@ logger.setLevel(logging.INFO)
 DEFAULT_TIMEOUT = 30
 MAX_RETRIES = 10
 INITIAL_RETRY_DELAY = 1
+
+
+def _build_search_payload(
+    query: str,
+    ticker: str,
+    year: str,
+    filing_type: str,
+    topk: int,
+) -> Dict[str, Any]:
+    """Build the request body expected by ``/vector_store/search_sec_filings``."""
+    return {
+        "ticker": ticker,
+        "year": year,
+        "filing_type": filing_type,
+        "query": query,
+        "top_k": topk,
+    }
 
 
 def call_search_api(
@@ -32,7 +49,8 @@ def call_search_api(
     Calls the vector store search API for one filing.
 
     Args:
-        retrieval_service_url: The URL of the search API (e.g. /vector_store/search).
+        retrieval_service_url: The URL of the search API
+            (e.g. /vector_store/search_sec_filings).
         query: Semantic search query text.
         ticker: Stock symbol for the filing.
         year: Filing year.
@@ -49,13 +67,13 @@ def call_search_api(
     request_id = str(uuid.uuid4())
     log_prefix = f"[Search Request ID: {request_id}] "
 
-    payload = {
-        "ticker": ticker,
-        "year": year,
-        "filing_type": filing_type,
-        "query": query,
-        "top_k": topk,
-    }
+    payload = _build_search_payload(
+        query=query,
+        ticker=ticker,
+        year=year,
+        filing_type=filing_type,
+        topk=topk,
+    )
     headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
     # Use provided session or create a new one for this request
