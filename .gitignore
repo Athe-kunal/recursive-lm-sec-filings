@@ -215,3 +215,5 @@ localworkspace/
 data/
 
 faiss_indexes/
+
+chroma_db/
