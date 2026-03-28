@@ -36,3 +36,7 @@ vllm-embd-serve:
 .PHONY: start-server
 start-server:
 	uv run uvicorn tool_server:app --host 0.0.0.0 --reload --port $(API_PORT)
+
+.PHONY: test
+test:
+	uv run pytest tests/ -v

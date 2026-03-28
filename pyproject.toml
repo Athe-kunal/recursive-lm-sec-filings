@@ -27,6 +27,9 @@ dependencies = [
 ]
 
 [dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
 ocr-md = [
     "olmocr>=0.4.27",
     "chromadb>=1.0.20",
