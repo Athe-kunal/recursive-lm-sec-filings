@@ -3,7 +3,7 @@ import logging
 import threading
 import time
 import uuid
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 from urllib.parse import urlparse
 
 import requests
@@ -16,8 +16,6 @@ logger.setLevel(logging.INFO)
 DEFAULT_TIMEOUT = 30
 MAX_RETRIES = 10
 INITIAL_RETRY_DELAY = 1
-SEC_FILING_TOOL_ENDPOINT = "/tools/sec_filing_to_markdown_embed_and_search"
-EARNINGS_TRANSCRIPT_TOOL_ENDPOINT = "/tools/earnings_transcript_to_embed_and_search"
 
 
 def _build_search_payload(
@@ -35,24 +33,6 @@ def _build_search_payload(
         "query": query,
         "top_k": topk,
     }
-
-
-def _extract_result_text(api_response: Any) -> str:
-    """Extract the plain-text result from a tool server response."""
-    if not isinstance(api_response, dict):
-        return "Unexpected API response shape (expected a JSON object)."
-
-    result = api_response.get("result")
-    if not isinstance(result, str):
-        return "Unexpected API response shape (missing string 'result')."
-
-    return result
-
-
-def _count_formatted_documents(formatted_result: str) -> int:
-    """Count formatted ``Doc N`` entries in plain-text tool output."""
-    lines = formatted_result.splitlines()
-    return sum(1 for line in lines if line.startswith("Doc "))
 
 
 def call_search_api(

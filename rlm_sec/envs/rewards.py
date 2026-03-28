@@ -1,9 +1,17 @@
 import re
 import string
 import datetime
+from typing import Literal
 
 _TICKER_SYMBOL_RE = re.compile(r"^(?:[A-Z]{1,5}|[A-Z]{1,4}\.[A-Z])$")
 _VALID_FILING_TYPES = frozenset({"10-K", "10-Q1", "10-Q2", "10-Q3"})
+_VALID_QUARTER_TYPES = frozenset({"Q1", "Q2", "Q3", "Q4"})
+
+TaskType = Literal["sec_filings", "earning_transcripts"]
+
+_VALID_TOOL_GROUP_NAMES = frozenset(
+    {"SECFilingToolGroup", "EarningsTranscriptToolGroup"}
+)
 
 
 def _reward_ticker(ticker: str) -> float:
@@ -26,28 +34,45 @@ def _reward_year(year: str) -> float:
     return 0.0
 
 
-def _reward_filing_type(filing_type: str) -> float:
+def _reward_filing_type(filing_type: str, task_type: TaskType) -> float:
     """Return 1 if *filing_type* is 10-K or 10-Q1..10-Q3, else 0.
 
     Quarter labels match stored stems (e.g. ``10-Q3`` is the third 10-Q).
     """
     normalized = filing_type.strip().upper()
+    match task_type:
+        case "sec_filings":
+            valid_types = _VALID_FILING_TYPES
+        case "earning_transcripts":
+            valid_types = _VALID_QUARTER_TYPES
+        case _:
+            raise ValueError(f"Invalid task type: {task_type}")
     if not normalized:
         return 0.0
-    if normalized in _VALID_FILING_TYPES:
+    if normalized in valid_types:
         return 1 / 3
     return 0.0
 
 
-def reward_action_format(action_str: str) -> float:
-    parts = [part.strip() for part in action_str.split(",")]
-    if len(parts) != 4:
-        return 0
-    _, ticker, year, filing_type = parts
-    ticker_reward = _reward_ticker(ticker)
-    year_reward = _reward_year(year)
-    filing_reward = _reward_filing_type(filing_type)
-    return ticker_reward + year_reward + filing_reward
+def _reward_tool_name(tool_group_name: str) -> float:
+    """Return 1.0 if tool_group_name is a recognized tool group, else 0.0."""
+    return 1.0 if tool_group_name in _VALID_TOOL_GROUP_NAMES else 0.0
+
+
+def reward_action_format(
+    tool_group_name: str,
+    ticker: str,
+    year: str,
+    filing_type: str,
+    task_type: TaskType,
+) -> float:
+    """Score pre-parsed action components across tool name, ticker, year, and filing type."""
+    return (
+        _reward_tool_name(tool_group_name)
+        + _reward_ticker(ticker)
+        + _reward_year(year)
+        + _reward_filing_type(filing_type, task_type)
+    )
 
 
 def normalize_answer(s):
@@ -108,8 +133,8 @@ def extract_solution(solution_str):
 
 
 def compute_score(
-    solution_str, ground_truth, method="strict", format_score=0.0, score=1.0
-):
+    solution_str, ground_truth, method="strict", format_score=1.0, score=1.0
+) -> tuple[float, float]:
     """The scoring function for exact match (EM).
 
     Args:
@@ -122,12 +147,12 @@ def compute_score(
     answer = extract_solution(solution_str=solution_str)
 
     if answer is None:
-        return 0
+        return 0.0, 1.0
     else:
         if em_check(answer, ground_truth["target"]):
-            return score
+            return score, 0.0
         else:
-            return format_score
+            return 0.0, format_score
 
 
 def compute_score_subem(

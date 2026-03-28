@@ -3,12 +3,12 @@ MODEL := allenai/olmOCR-2-7B-1025-FP8
 GPU_MEMORY_UTILIZATION ?= 0.97
 EMBD_GPU_MEMORY_UTILIZATION ?= 0.1
 EMBD_MODEL ?= Qwen/Qwen3-Embedding-0.6B
-EMBD_PORT ?= 8002
+EMBD_PORT ?= 8888
 MAX_MODEL_LEN          ?= 16384
 TENSOR_PARALLEL_SIZE   ?= 2
 DATA_PARALLEL_SIZE     ?= 1
 PORT                   ?= 8000
-API_PORT               ?= 8888
+API_PORT               ?= 8002
 SERVER                 ?= localhost
 
 .PHONY: vllm-olmocr-serve
@@ -35,4 +35,4 @@ vllm-embd-serve:
 
 .PHONY: start-server
 start-server:
-	uv run uvicorn server:app --host 0.0.0.0 --reload --port $(API_PORT)
+	uv run uvicorn tool_server:app --host 0.0.0.0 --reload --port $(API_PORT)
