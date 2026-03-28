@@ -174,7 +174,6 @@ class FinanceSearchEnv(BaseTextEnv):
                 format=format,
             )
         else:
-            # No reward for intermediate steps for Search tasks
             intermediate_reward = self._parse_action(action).reward
             return RewardType(
                 correctness=0.0,
@@ -219,6 +218,7 @@ class FinanceSearchEnv(BaseTextEnv):
                         "\n<information>Invalid <search> format. Expected: "
                         "SECFilingTool(ticker, year, filing_type) or "
                         "EarningsTranscriptTool(ticker, year, quarter).</information>\n"
+                        f"But got: {action}"
                     )
                 else:
                     assert parsed.tool_group_name is not None

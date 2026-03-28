@@ -330,6 +330,10 @@ class SearchToolGroup(ToolGroup):
         self.last_metadata = metadata
         return result_text
 
+    def get_last_metadata(self) -> Dict[str, Any]:
+        """Return the metadata from the most recent tool invocation."""
+        return self.last_metadata
+
     @tool
     def search(
         self,

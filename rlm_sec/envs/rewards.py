@@ -147,10 +147,10 @@ def compute_score(
     answer = extract_solution(solution_str=solution_str)
 
     if answer is None:
-        return 0.0, 1.0
+        return 0.0, 0.0
     else:
         if em_check(answer, ground_truth["target"]):
-            return score, 0.0
+            return score, format_score
         else:
             return 0.0, format_score
 
