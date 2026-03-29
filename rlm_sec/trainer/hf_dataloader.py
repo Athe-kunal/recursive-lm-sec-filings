@@ -17,7 +17,7 @@ DEFAULT_USER_CONTENT_PREFIX = (
     "The search engine will return results between <information> and </information>. "
     "You can search as many times as needed. Once you have sufficient information, "
     "provide the final answer inside <answer> and </answer> without additional explanation. "
-    "For example, <answer> The revenue increased by 16%. </answer>. Question: "
+    "For example, <answer> The revenue increased by 16%. </answer>. \n\nQuestion: "
 )
 
 
