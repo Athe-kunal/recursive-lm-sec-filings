@@ -1,11 +1,10 @@
-"""Tests for intermediate format reward and terminal correctness scoring.
+"""Tests for format reward and terminal correctness scoring.
 
 Retrieval (HTTP) is mocked via patch.object on FinanceSearchEnv._execute_tool
 so no real server is needed.
 
-NOTE: _reward_year has an inverted guard (`if not len(year) != 4`) that always
-returns 0.0 for 4-digit years, making year reward unreachable. Valid actions
-therefore score 1.0 (tool) + 1/3 (ticker) + 0 (year) + 1/3 (filing) = 5/3.
+Valid action-format score is:
+1.0 (tool) + 1/3 (ticker) + 1/3 (year) + 1/3 (filing) = 2.0.
 """
 
 from unittest.mock import patch
@@ -16,7 +15,7 @@ from rlm_sec.envs.finance_env import FinanceSearchEnv, SearchEnvConfig
 
 FAKE_RETRIEVAL = "\n<information>\nDoc 1: Revenue was $89.5B.\n</information>\n"
 GROUND_TRUTH = {"target": "89.5B"}
-EXPECTED_VALID_FORMAT_REWARD = pytest.approx(5 / 3)
+EXPECTED_VALID_FORMAT_REWARD = pytest.approx(2.0)
 
 
 def make_env(max_turns: int = 3) -> FinanceSearchEnv:
@@ -103,3 +102,22 @@ class TestCorrectnessScore:
         assert out["done"] is True
         assert out["reward"].correctness == 0.0
         assert out["reward"].format == 0.0  # no <answer> tag → no format credit
+
+
+class TestTask2FormatScoring:
+    def test_financebench_format_includes_lookup_ticker_year(self):
+        env = make_env()
+        env.ground_truth = {
+            "target": "89.5B",
+            "data_source": "PatronusAI/financebench",
+            "ticker": "AAPL",
+            "year": "2023",
+        }
+        with patch.object(FinanceSearchEnv, "_execute_tool", return_value=FAKE_RETRIEVAL):
+            env.step("<search>CompanyNameToTickerTool(Apple Inc.)</search>")
+            env.step("<search>SECFilingTool(revenue, AAPL, 2023, 10-K)</search>")
+        out = env.step("<answer>89.5B</answer>")
+
+        assert out["done"] is True
+        assert out["reward"].correctness == 1.0
+        assert out["reward"].format == 4.0
