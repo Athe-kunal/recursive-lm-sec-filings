@@ -8,6 +8,13 @@ from datasets import (
     concatenate_datasets,
     load_dataset,
 )
+import yfinance as yf
+
+
+def get_company_name(ticker: str) -> str | None:
+    yf_ticker = yf.Ticker(ticker)
+    return yf_ticker.info.get("longName")
+
 
 DEFAULT_SYSTEM_CONTENT = "You are a helpful and harmless assistant."
 
@@ -15,6 +22,9 @@ DEFAULT_USER_CONTENT_PREFIX = (
     "Answer the given question. You must conduct reasoning inside <think> and </think> "
     "first every time you get new information. After reasoning, if you lack some knowledge, "
     "you can call one of the tools below.\n\n"
+    "If you only have a company name (not a ticker), resolve it first using:\n"
+    "  <search>CompanyNameToTickerTool(company name)</search>\n"
+    "  Example: <search>CompanyNameToTickerTool(Apple Inc.)</search>\n\n"
     "Tool 1 — SEC Filings (annual, quarterly, current, and proxy reports):\n"
     "  <search>SECFilingTool(query, ticker, year, filing_type)</search>\n"
     "  filing_type is one of: 10-K (annual), 10-Q1, 10-Q2, 10-Q3 (quarterly),\n"
@@ -36,16 +46,6 @@ RANKING_USER_CONTENT_PREFIX = (
     "If you only have a company name (not a ticker), resolve it first using:\n"
     "  <search>CompanyNameToTickerTool(company name)</search>\n"
     "  Example: <search>CompanyNameToTickerTool(Apple Inc.)</search>\n\n"
-    "Then retrieve relevant documents using:\n\n"
-    "Tool 1 — SEC Filings (annual, quarterly, current, and proxy reports):\n"
-    "  <search>SECFilingTool(query, ticker, year, filing_type)</search>\n"
-    "  filing_type is one of: DEF14A (proxy), 10-K (annual), 10-Q (quarterly), 8-K (current events).\n"
-    "  Example: <search>SECFilingTool(executive compensation, AAPL, 2023, DEF14A)</search>\n\n"
-    "Tool 2 — Earnings Call Transcripts:\n"
-    "  <search>EarningsTranscriptTool(query, ticker, year, quarter)</search>\n"
-    "  quarter is one of: Q1, Q2, Q3, Q4.\n"
-    "  Example: <search>EarningsTranscriptTool(revenue guidance, MSFT, 2023, Q2)</search>\n\n"
-    "The search engine will return results between <information> and </information>. "
     "After searching, output the relevant document types inside <answer> and </answer> as a "
     "comma-separated list. Use only these values: DEF14A, 10-K, 10-Q, 8-K, Earnings.\n"
     "For example, <answer> 10-K, Earnings </answer>.\n\nQuestion: "

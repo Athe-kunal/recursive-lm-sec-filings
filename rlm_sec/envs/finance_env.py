@@ -136,11 +136,13 @@ def _intermediate_format_reward(parsed: ParsedSearch) -> float:
 
 def _tool_group_name(tool_name: ToolName) -> str:
     """Translate public tool names to historical tool group names."""
-    if tool_name == "SECFilingTool":
-        return "SECFilingToolGroup"
-    if tool_name == "EarningsTranscriptTool":
-        return "EarningsTranscriptToolGroup"
-    return "CompanyNameToTickerToolGroup"
+    match tool_name:
+        case "SECFilingTool":
+            return "SECFilingToolGroup"
+        case "EarningsTranscriptTool":
+            return "EarningsTranscriptToolGroup"
+        case _:
+            return "CompanyNameToTickerToolGroup"
 
 
 def _compute_terminal_reward(
