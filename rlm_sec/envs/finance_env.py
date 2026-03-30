@@ -1,20 +1,26 @@
+import re
+from dataclasses import dataclass
+from typing import Any, Dict, NamedTuple, Optional, Union
+
+from omegaconf import DictConfig
 from skyrl_gym.envs.base_text_env import (
     BaseTextEnv,
     BaseTextEnvStepOutput,
     ConversationType,
 )
-from typing import Any
-from rlm_sec.envs.rewards import compute_score
-import re
-from typing import Dict, Optional, Union, NamedTuple
-from dataclasses import dataclass
-from omegaconf import DictConfig
 
+from rlm_sec.envs.rewards import (
+    DataTaskType,
+    TaskType,
+    compute_ranking_score,
+    compute_score,
+    reward_action_format,
+)
 from rlm_sec.envs.tools import (
+    CompanyNameToTickerToolGroup,
     EarningsTranscriptToolGroup,
     SECFilingToolGroup,
 )
-from rlm_sec.envs.rewards import reward_action_format, TaskType
 from settings import (
     EARNINGS_TRANSCRIPT_TOOL_ENDPOINT,
     SEC_FILING_TOOL_ENDPOINT,
@@ -36,22 +42,33 @@ SEARCH_TOOL_ROUTING = {
         "EarningsTranscriptToolGroup",
         "earnings_transcript_to_embed_and_search",
     ),
+    "CompanyNameToTickerTool": (
+        "CompanyNameToTickerToolGroup",
+        "company_name_to_ticker_tool",
+    ),
 }
 
 
 @dataclass
 class ParsedSearch:
     action: str
+    # 4-arg search tools (SECFilingTool, EarningsTranscriptTool)
     query: Optional[str] = None
     ticker: Optional[str] = None
     year: Optional[str] = None
     filing_type_or_quarter: Optional[str] = None
+    # 1-arg lookup tool (CompanyNameToTickerTool)
+    lookup_arg: Optional[str] = None
     tool_group_name: Optional[str] = None
     tool_name: Optional[str] = None
     task_type: Optional[TaskType] = None
 
     @property
     def reward(self) -> float:
+        # CompanyNameToTickerTool calls always earn a small positive reward for
+        # correct format (tool group is valid; no ticker/year/filing_type to score).
+        if self.tool_group_name == "CompanyNameToTickerToolGroup":
+            return 1.0
         if self.task_type is None:
             return 0.0
         return reward_action_format(
@@ -82,14 +99,8 @@ class FinanceSearchEnv(BaseTextEnv):
     ):
         super().__init__()
         self.max_turns = extras["max_turns"] if "max_turns" in extras else 2
+        self.data_task_type: DataTaskType = extras.get("task_type", "qa")
 
-        # Register the base search tool plus the finance ingestion/search tools.
-        # self.search_tool_group = SearchToolGroup(
-        #     search_url=env_config.search_url,
-        #     topk=env_config.topk,
-        #     timeout=env_config.timeout,
-        #     log_requests=env_config.log_requests,
-        # )
         self.sec_filing_tool_group = SECFilingToolGroup(
             tool_url=env_config.sec_filing_tool_url,
             topk=env_config.topk,
@@ -102,16 +113,17 @@ class FinanceSearchEnv(BaseTextEnv):
             timeout=env_config.timeout,
             log_requests=env_config.log_requests,
         )
+        self.company_name_to_ticker_tool_group = CompanyNameToTickerToolGroup()
+
         self.init_tool_groups(
             [
-                # self.search_tool_group,
                 self.sec_filing_tool_group,
                 self.earnings_transcript_tool_group,
+                self.company_name_to_ticker_tool_group,
             ]
         )
 
-        # Chat history
-        # role (user, assistant), content (tool observation or LLM response)
+        # Chat history: list of {role, content} dicts (tool observations + LLM turns)
         self.chat_history: ConversationType = []
 
     def _get_tool_group_by_name(self, tool_group_name: str) -> Optional[Any]:
@@ -122,12 +134,15 @@ class FinanceSearchEnv(BaseTextEnv):
         return None
 
     def _parse_action(self, action: str) -> ParsedSearch:
-        """Parse ``<search>ToolName(query, ticker, year, filing_type_or_quarter)</search>``.
+        """Parse a ``<search>ToolName(...)</search>`` action string.
+
+        Handles two call signatures:
+          - 4-arg: SECFilingTool(query, ticker, year, filing_type)
+                   EarningsTranscriptTool(query, ticker, year, quarter)
+          - 1-arg: CompanyNameToTickerTool(company name)
 
         Always returns a ParsedSearch. On any parse failure, all fields except
         ``action`` are left as None and ``reward`` will be 0.
-
-        Supported tool names: SECFilingTool, EarningsTranscriptTool.
         """
         search_match = re.search(r"<search>(.*?)</search>", action, re.DOTALL)
         if not search_match:
@@ -142,13 +157,23 @@ class FinanceSearchEnv(BaseTextEnv):
         if tool_name_str not in SEARCH_TOOL_ROUTING:
             return ParsedSearch(action=action)
 
-        parts = [p.strip() for p in call_match.group(2).split(",")]
+        tool_group_name, tool_name = SEARCH_TOOL_ROUTING[tool_name_str]
+        raw_args = call_match.group(2)
+
+        if tool_name_str == "CompanyNameToTickerTool":
+            return ParsedSearch(
+                action=action,
+                lookup_arg=raw_args.strip(),
+                tool_group_name=tool_group_name,
+                tool_name=tool_name,
+            )
+
+        parts = [p.strip() for p in raw_args.split(",")]
         if len(parts) != 4:
             return ParsedSearch(action=action)
 
         query, ticker, year, filing_type_or_quarter = parts
-        tool_group_name, tool_name = SEARCH_TOOL_ROUTING[tool_name_str]
-        task_type = (
+        task_type: TaskType = (
             "sec_filings"
             if tool_group_name == "SECFilingToolGroup"
             else "earning_transcripts"
@@ -165,20 +190,21 @@ class FinanceSearchEnv(BaseTextEnv):
         )
 
     def _get_reward(self, action: str, done: bool) -> RewardType:
-        if done:
-            # Concat all chat history into a single string and compute reward
-            chat_history_str = "".join([item["content"] for item in self.chat_history])
-            correctness, format = compute_score(chat_history_str, self.ground_truth)
-            return RewardType(
-                correctness=correctness,
-                format=format,
-            )
-        else:
+        if not done:
             intermediate_reward = self._parse_action(action).reward
-            return RewardType(
-                correctness=0.0,
-                format=intermediate_reward,
-            )
+            return RewardType(correctness=0.0, format=intermediate_reward)
+
+        chat_history_str = "".join(item["content"] for item in self.chat_history)
+        match self.data_task_type:
+            case "qa":
+                correctness, fmt = compute_score(chat_history_str, self.ground_truth)
+            case "ranking":
+                correctness, fmt = compute_ranking_score(
+                    chat_history_str, self.ground_truth
+                )
+            case _:
+                correctness, fmt = 0.0, 0.0
+        return RewardType(correctness=correctness, format=fmt)
 
     def _is_done(self, action: str) -> bool:
         if self.turns >= self.max_turns:
@@ -215,24 +241,26 @@ class FinanceSearchEnv(BaseTextEnv):
                 tool_input = parsed
                 if parsed.tool_group_name is None:
                     observation = (
-                        "\n<information>Invalid <search> format. Expected: "
-                        "SECFilingTool(ticker, year, filing_type) or "
-                        "EarningsTranscriptTool(ticker, year, quarter).</information>\n"
-                        f"But got: {action}"
+                        "\n<information>Invalid <search> format. Expected one of:\n"
+                        "  SECFilingTool(query, ticker, year, filing_type)\n"
+                        "  EarningsTranscriptTool(query, ticker, year, quarter)\n"
+                        "  CompanyNameToTickerTool(company name)"
+                        f"</information>\nBut got: {action}"
                     )
                 else:
-                    assert parsed.tool_group_name is not None
-                    assert parsed.tool_name is not None
                     tool_group_name = parsed.tool_group_name
-                    tool_name = parsed.tool_name
-                    # The underlying tool signature is (query, ticker, year, filing_type_or_quarter).
-                    # query is left empty; the server performs a broad retrieval over the filing.
-                    tool_args = [
-                        "",
-                        parsed.ticker,
-                        parsed.year,
-                        parsed.filing_type_or_quarter,
-                    ]
+                    tool_name = parsed.tool_name or ""
+                    if parsed.tool_group_name == "CompanyNameToTickerToolGroup":
+                        # 1-arg lookup tool: pass the company name directly
+                        tool_args = [parsed.lookup_arg or ""]
+                    else:
+                        # 4-arg search tools: query is passed from the model output
+                        tool_args = [
+                            parsed.query or "",
+                            parsed.ticker or "",
+                            parsed.year or "",
+                            parsed.filing_type_or_quarter or "",
+                        ]
                     observation = self._execute_tool(
                         tool_group_name, tool_name, tool_args
                     )

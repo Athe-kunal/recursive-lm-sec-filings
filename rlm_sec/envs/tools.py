@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 
 import requests
 from requests.adapters import HTTPAdapter
+from finance_data.filings.utils import company_to_ticker
 from skyrl_gym.tools.core import tool, ToolGroup
 
 logger = logging.getLogger(__name__)
@@ -403,3 +404,23 @@ class EarningsTranscriptToolGroup(SearchToolGroup):
     ) -> str:
         """Call the earnings transcript tool server endpoint."""
         return self._call_search(query, ticker, year, quarter)
+
+
+class CompanyNameToTickerToolGroup(ToolGroup):
+    """Resolves a company name to its stock ticker symbol."""
+
+    def __init__(self):
+        super().__init__(name="CompanyNameToTickerToolGroup")
+
+    @tool
+    def company_name_to_ticker_tool(self, name: str) -> str:
+        """Resolve a full or partial company name to its stock ticker symbol.
+
+        Use this when the question provides a company name instead of a ticker.
+        Skip this when a valid ticker is already known.
+        """
+        ticker = company_to_ticker(name)
+        if ticker is None:
+            raise ValueError(f"No ticker found for company name: {name!r}")
+        logger.info(f"{name=} resolved to {ticker=}")
+        return ticker

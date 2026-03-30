@@ -10,6 +10,7 @@ from datasets import (
 )
 
 DEFAULT_SYSTEM_CONTENT = "You are a helpful and harmless assistant."
+
 DEFAULT_USER_CONTENT_PREFIX = (
     "Answer the given question. You must conduct reasoning inside <think> and </think> "
     "first every time you get new information. After reasoning, if you lack some knowledge, "
@@ -29,11 +30,39 @@ DEFAULT_USER_CONTENT_PREFIX = (
     "For example, <answer> The revenue increased by 16%. </answer>. \n\nQuestion: "
 )
 
+RANKING_USER_CONTENT_PREFIX = (
+    "Given the question below, identify which document types are most relevant to answer it. "
+    "You must conduct reasoning inside <think> and </think> first every time you get new information.\n\n"
+    "If you only have a company name (not a ticker), resolve it first using:\n"
+    "  <search>CompanyNameToTickerTool(company name)</search>\n"
+    "  Example: <search>CompanyNameToTickerTool(Apple Inc.)</search>\n\n"
+    "Then retrieve relevant documents using:\n\n"
+    "Tool 1 — SEC Filings (annual, quarterly, current, and proxy reports):\n"
+    "  <search>SECFilingTool(query, ticker, year, filing_type)</search>\n"
+    "  filing_type is one of: DEF14A (proxy), 10-K (annual), 10-Q (quarterly), 8-K (current events).\n"
+    "  Example: <search>SECFilingTool(executive compensation, AAPL, 2023, DEF14A)</search>\n\n"
+    "Tool 2 — Earnings Call Transcripts:\n"
+    "  <search>EarningsTranscriptTool(query, ticker, year, quarter)</search>\n"
+    "  quarter is one of: Q1, Q2, Q3, Q4.\n"
+    "  Example: <search>EarningsTranscriptTool(revenue guidance, MSFT, 2023, Q2)</search>\n\n"
+    "The search engine will return results between <information> and </information>. "
+    "After searching, output the relevant document types inside <answer> and </answer> as a "
+    "comma-separated list. Use only these values: DEF14A, 10-K, 10-Q, 8-K, Earnings.\n"
+    "For example, <answer> 10-K, Earnings </answer>.\n\nQuestion: "
+)
+
 
 def build_qa_prompt(question: str) -> list[dict[str, str]]:
     return [
         {"content": DEFAULT_SYSTEM_CONTENT, "role": "system"},
         {"content": DEFAULT_USER_CONTENT_PREFIX + question, "role": "user"},
+    ]
+
+
+def build_ranking_prompt(question: str) -> list[dict[str, str]]:
+    return [
+        {"content": DEFAULT_SYSTEM_CONTENT, "role": "system"},
+        {"content": RANKING_USER_CONTENT_PREFIX + question, "role": "user"},
     ]
 
 
@@ -46,6 +75,7 @@ class QAExample:
     ticker_or_company_name: str
     filing_type: str
     data_source: str
+    task_type: str
 
 
 QA_FEATURES = Features(
@@ -57,6 +87,7 @@ QA_FEATURES = Features(
         "ticker_or_company_name": Value("string"),
         "filing_type": Value("string"),
         "data_source": Value("string"),
+        "task_type": Value("string"),
     }
 )
 
@@ -74,6 +105,7 @@ def load_financial_qa() -> Dataset:
             ticker_or_company_name=row["ticker"],
             filing_type=filing_type,
             data_source="virattt/financial-qa-10K",
+            task_type="qa",
         )
         return asdict(example)
 
@@ -95,6 +127,7 @@ def load_financebench() -> Dataset:
             ticker_or_company_name=row["company"],
             filing_type=row["doc_type"],
             data_source="PatronusAI/financebench",
+            task_type="qa",
         )
         return asdict(example)
 
@@ -122,6 +155,7 @@ class DocumentRankingExample:
     relevant: list[str]
     not_relevant: list[str]
     data_source: str
+    task_type: str
 
 
 DOCUMENT_RANKING_FEATURES = Features(
@@ -130,6 +164,7 @@ DOCUMENT_RANKING_FEATURES = Features(
         "relevant": Sequence(Value("string")),
         "not_relevant": Sequence(Value("string")),
         "data_source": Value("string"),
+        "task_type": Value("string"),
     }
 )
 
@@ -160,10 +195,11 @@ def load_finance_agent_bench(file_path: str) -> Dataset:
         question = extract_question(content)
         relevant, not_relevant = parse_qrel(row["qrel"])
         example = DocumentRankingExample(
-            prompt=build_qa_prompt(question),
+            prompt=build_ranking_prompt(question),
             relevant=relevant,
             not_relevant=not_relevant,
             data_source="financeAgentBench",
+            task_type="ranking",
         )
         return asdict(example)
 
