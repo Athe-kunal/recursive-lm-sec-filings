@@ -64,11 +64,22 @@ class ParsedSearch:
 
 
 @dataclass(frozen=True)
-class RewardBreakdown:
-    """Terminal and intermediate rewards exposed through rollout state."""
+class QARewardBreakdown:
+    """Terminal reward payload for QA tasks."""
 
     correctness: float
     format: float
+
+
+@dataclass(frozen=True)
+class RankingRewardBreakdown:
+    """Terminal reward payload for ranking tasks."""
+
+    correctness: float
+    format: float
+    precision: float
+    recall: float
+    f1: float
 
 
 def _parse_tool_call(inner_action: str) -> tuple[str, str] | None:
@@ -147,20 +158,32 @@ def _tool_group_name(tool_name: ToolName) -> str:
 
 def _compute_terminal_reward(
     completion_text: str, info: dict[str, Any]
-) -> RewardBreakdown:
+) -> QARewardBreakdown | RankingRewardBreakdown:
     """Compute terminal reward by task type (`qa` or `ranking`)."""
     task_type: DataTaskType = info.get("task_type", "qa")
-    ground_truth = info.get("ground_truth", {})
+    ground_truth = dict(info.get("ground_truth", {}))
+    for key in ("data_source", "year", "ticker", "ticker_or_company_name"):
+        if key in info and key not in ground_truth:
+            ground_truth[key] = info[key]
 
     if task_type == "qa":
-        correctness, fmt = compute_score(completion_text, ground_truth)
-        return RewardBreakdown(correctness=correctness, format=fmt)
+        qa_reward = compute_score(completion_text, ground_truth)
+        return QARewardBreakdown(
+            correctness=qa_reward.correctness,
+            format=qa_reward.format,
+        )
 
     if task_type == "ranking":
-        correctness, fmt = compute_ranking_score(completion_text, ground_truth)
-        return RewardBreakdown(correctness=correctness, format=fmt)
+        ranking_reward = compute_ranking_score(completion_text, ground_truth)
+        return RankingRewardBreakdown(
+            correctness=ranking_reward.correctness,
+            format=ranking_reward.format,
+            precision=ranking_reward.precision,
+            recall=ranking_reward.recall,
+            f1=ranking_reward.f1,
+        )
 
-    return RewardBreakdown(correctness=0.0, format=0.0)
+    return QARewardBreakdown(correctness=0.0, format=0.0)
 
 
 def _completion_to_text(completion: vf.Messages) -> str:

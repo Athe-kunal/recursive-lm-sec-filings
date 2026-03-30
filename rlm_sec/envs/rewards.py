@@ -1,6 +1,7 @@
 import re
 import string
 import datetime
+from dataclasses import dataclass
 from typing import Literal
 
 _TICKER_SYMBOL_RE = re.compile(r"^(?:[A-Z]{1,5}|[A-Z]{1,4}\.[A-Z])$")
@@ -19,6 +20,26 @@ _VALID_TOOL_GROUP_NAMES = frozenset(
 )
 
 _SEARCH_PATTERN = re.compile(r"<search>(.*?)</search>", re.DOTALL)
+_SOURCE_PATTERN = re.compile(r"<sources?>(.*?)</sources?>", re.DOTALL | re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class QAScoreResult:
+    """Scoring result for QA tasks."""
+
+    correctness: float
+    format: float
+
+
+@dataclass(frozen=True)
+class RankingScoreResult:
+    """Scoring result for ranking tasks."""
+
+    correctness: float
+    format: float
+    precision: float
+    recall: float
+    f1: float
 
 
 def _reward_ticker(ticker: str) -> float:
@@ -139,9 +160,116 @@ def extract_solution(solution_str):
     return matches[-1].group(1).strip()
 
 
+def extract_sources(solution_str: str) -> list[str]:
+    """Extract source labels from the last <source> or <sources> tag."""
+    matches = list(_SOURCE_PATTERN.finditer(solution_str))
+    if not matches:
+        return []
+
+    raw_sources = matches[-1].group(1)
+    normalized_sources = []
+    for raw_source in raw_sources.split(","):
+        normalized = raw_source.strip()
+        if normalized:
+            normalized_sources.append(normalized)
+    return normalized_sources
+
+
+def compute_precision_recall_f1(
+    predicted: list[str], relevant: list[str]
+) -> tuple[float, float, float]:
+    """Compute precision/recall/F1 over case-insensitive source sets."""
+    predicted_set = {value.upper() for value in predicted}
+    relevant_set = {value.upper() for value in relevant}
+
+    if not predicted_set and not relevant_set:
+        return 1.0, 1.0, 1.0
+    if not relevant_set:
+        return 0.0, 0.0, 0.0
+
+    true_positives = len(predicted_set & relevant_set)
+    precision = true_positives / len(predicted_set) if predicted_set else 0.0
+    recall = true_positives / len(relevant_set)
+    if precision + recall == 0:
+        f1 = 0.0
+    else:
+        f1 = (2 * precision * recall) / (precision + recall)
+    return precision, recall, f1
+
+
+def _find_search_calls(solution_str: str) -> list[tuple[str, list[str]]]:
+    """Return parsed tool calls as (tool_name, args)."""
+    parsed_calls: list[tuple[str, list[str]]] = []
+    for match in _SEARCH_PATTERN.finditer(solution_str):
+        inner = match.group(1).strip()
+        call_match = re.match(r"(\w+)\((.+)\)$", inner, re.DOTALL)
+        if not call_match:
+            continue
+        tool_name = call_match.group(1).strip()
+        args = [part.strip() for part in call_match.group(2).rsplit(",", 3)]
+        parsed_calls.append((tool_name, args))
+    return parsed_calls
+
+
+def _matches_dataset(data_source: str, accepted: set[str]) -> bool:
+    normalized = data_source.strip().lower()
+    return normalized in accepted
+
+
+def _has_valid_qa_search_call(search_calls: list[tuple[str, list[str]]]) -> bool:
+    """Return True when at least one recognized retrieval tool call is well-formed."""
+    for tool_name, args in search_calls:
+        if tool_name == "CompanyNameToTickerTool" and len(args) == 1:
+            return True
+        if tool_name in {"SECFilingTool", "EarningsTranscriptTool"} and len(args) == 4:
+            return True
+    return False
+
+
+def compute_qa_format_score(solution_str: str, ground_truth: dict) -> float:
+    """Compute QA format score from tool usage and dataset-specific format checks."""
+    search_calls = _find_search_calls(solution_str)
+    valid_tool_call = _has_valid_qa_search_call(search_calls)
+    base_format_score = 1.0 if valid_tool_call else 0.0
+
+    data_source = str(ground_truth.get("data_source", ""))
+    task2_sources = {
+        "virattt/financial-qa-10k",
+        "viratt-finance-data",
+        "patronusai/financebench",
+        "finance bench",
+    }
+    if not _matches_dataset(data_source, task2_sources):
+        return base_format_score
+
+    used_company_to_ticker = any(
+        tool_name == "CompanyNameToTickerTool" for tool_name, _ in search_calls
+    )
+
+    expected_ticker = str(
+        ground_truth.get("ticker", ground_truth.get("ticker_or_company_name", ""))
+    ).strip()
+    expected_year = str(ground_truth.get("year", "")).strip()
+
+    has_expected_ticker = False
+    has_expected_year = False
+    for tool_name, args in search_calls:
+        if tool_name in {"SECFilingTool", "EarningsTranscriptTool"} and len(args) == 4:
+            ticker = args[1].upper()
+            year = args[2]
+            if expected_ticker and ticker == expected_ticker.upper():
+                has_expected_ticker = True
+            if expected_year and year == expected_year:
+                has_expected_year = True
+
+    return base_format_score + (1.0 if used_company_to_ticker else 0.0) + (
+        1.0 if has_expected_ticker else 0.0
+    ) + (1.0 if has_expected_year else 0.0)
+
+
 def compute_score(
     solution_str, ground_truth, method="strict", format_score=1.0, score=1.0
-) -> tuple[float, float]:
+) -> QAScoreResult:
     """The scoring function for exact match (EM).
 
     Args:
@@ -153,13 +281,12 @@ def compute_score(
     """
     answer = extract_solution(solution_str=solution_str)
 
+    qa_format_score = compute_qa_format_score(solution_str, ground_truth)
     if answer is None:
-        return 0.0, 0.0
-    else:
-        if em_check(answer, ground_truth["target"]):
-            return score, format_score
-        else:
-            return 0.0, format_score
+        return QAScoreResult(correctness=0.0, format=0.0)
+    if em_check(answer, ground_truth["target"]):
+        return QAScoreResult(correctness=score, format=qa_format_score)
+    return QAScoreResult(correctness=0.0, format=qa_format_score)
 
 
 def extract_searched_filing_types(chat_history_str: str) -> set[str]:
@@ -192,36 +319,31 @@ def compute_ranking_score(
     ground_truth: dict,
     format_score: float = 1.0,
     score: float = 1.0,
-) -> tuple[float, float]:
-    """Score a ranking episode on coverage of relevant filing types and answer quality.
+) -> RankingScoreResult:
+    """Score ranking by predicted sources and return source metrics.
 
-    Correctness = 0.5 * coverage_score + 0.5 * answer_score, where:
-      - coverage_score = fraction of relevant filing types that appeared in search calls
-      - answer_score = 1.0 if the <answer> tag lists all relevant filing types, else 0.0
-
-    Returns:
-        (correctness, format) where format is 1.0 iff an <answer> tag is present.
+    Correctness is F1 between the predicted sources and relevant sources.
+    Format reward is 1.0 when <source> (or <sources>) tags are present.
     """
     relevant: list[str] = ground_truth.get("relevant", [])
-    answer = extract_solution(solution_str)
-
-    has_answer = answer is not None
-    format_reward = format_score if has_answer else 0.0
+    predicted_sources = extract_sources(solution_str)
+    has_source_tag = bool(predicted_sources)
+    format_reward = format_score if has_source_tag else 0.0
 
     if not relevant:
-        return 0.0, format_reward
+        return RankingScoreResult(
+            correctness=0.0, format=format_reward, precision=0.0, recall=0.0, f1=0.0
+        )
 
-    searched = extract_searched_filing_types(solution_str)
-    relevant_upper = {r.upper() for r in relevant}
-    covered = searched & relevant_upper
-    coverage_score = len(covered) / len(relevant_upper)
-
-    answer_score = 0.0
-    if has_answer:
-        answer_score = 1.0 if _answer_covers_relevant(answer, relevant) else 0.0
-
-    correctness = score * (0.5 * coverage_score + 0.5 * answer_score)
-    return correctness, format_reward
+    precision, recall, f1 = compute_precision_recall_f1(predicted_sources, relevant)
+    correctness = score * f1
+    return RankingScoreResult(
+        correctness=correctness,
+        format=format_reward,
+        precision=precision,
+        recall=recall,
+        f1=f1,
+    )
 
 
 def compute_score_subem(
