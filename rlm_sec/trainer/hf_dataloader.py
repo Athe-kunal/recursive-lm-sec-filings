@@ -11,6 +11,7 @@ from datasets import (
     load_dataset,
 )
 import yfinance as yf
+import os
 
 
 def get_company_name(ticker: str) -> str | None:
@@ -18,6 +19,11 @@ def get_company_name(ticker: str) -> str | None:
     return yf_ticker.info.get("longName")
 
 
+LOAD_FROM_CACHE_FILE: bool = os.getenv("LOAD_FROM_CACHE_FILE", "").lower() in {
+    "1",
+    "true",
+    "yes",
+}
 QUESTION_REPHRASER_RANDOM = random.Random(2026)
 MIN_SUPPORTED_YEAR = 2020
 
@@ -26,17 +32,19 @@ DEFAULT_SYSTEM_CONTENT = "You are a helpful and harmless assistant."
 
 DEFAULT_USER_CONTENT_PREFIX = (
     "Answer the given question. You must conduct reasoning inside <think> and </think> "
-    "first every time you get new information. After reasoning, if you lack some knowledge, "
-    "you can call one of the tools below.\n\n"
-    "If you only have a company name (not a ticker), resolve it first using:\n"
+    "first every time you get new information. In your reasoning, decide which document "
+    "source is most likely to contain the answer (e.g. annual report, quarterly filing, "
+    "earnings call, proxy statement, or current report) before calling any tool.\n\n"
+    "You have three tools available:\n\n"
+    "Tool 1 — Resolve company name to ticker (use this if you only have a company name):\n"
     "  <search>CompanyNameToTickerTool(company name)</search>\n"
     "  Example: <search>CompanyNameToTickerTool(Apple Inc.)</search>\n\n"
-    "Tool 1 — SEC Filings (annual, quarterly, current, and proxy reports):\n"
+    "Tool 2 — SEC Filings (annual, quarterly, current, and proxy reports):\n"
     "  <search>SECFilingTool(query, ticker, year, filing_type)</search>\n"
     "  filing_type is one of: 10-K (annual), 10-Q1, 10-Q2, 10-Q3 (quarterly),\n"
     "  8-K (current report / material events), DEF 14A (proxy statement).\n"
     "  Example: <search>SECFilingTool(cash flow from operations, AAPL, 2023, 10-K)</search>\n\n"
-    "Tool 2 — Earnings Call Transcripts:\n"
+    "Tool 3 — Earnings Call Transcripts:\n"
     "  <search>EarningsTranscriptTool(query, ticker, year, quarter)</search>\n"
     "  quarter is one of: Q1, Q2, Q3, Q4.\n"
     "  Example: <search>EarningsTranscriptTool(cash flow from operations, MSFT, 2023, Q2)</search>\n\n"
@@ -48,13 +56,16 @@ DEFAULT_USER_CONTENT_PREFIX = (
 
 RANKING_USER_CONTENT_PREFIX = (
     "Given the question below, identify which document types are most relevant to answer it. "
-    "You must conduct reasoning inside <think> and </think> first every time you get new information.\n\n"
-    "If you only have a company name (not a ticker), resolve it first using:\n"
-    "  <search>CompanyNameToTickerTool(company name)</search>\n"
-    "  Example: <search>CompanyNameToTickerTool(Apple Inc.)</search>\n\n"
-    "After searching, output the relevant document types inside <answer> and </answer> as a "
+    "You must conduct reasoning inside <think> and </think> tags before outputting the answer.\n\n"
+    "Available document types:\n"
+    "  DEF14A  — proxy statement (executive pay, board nominees, shareholder votes)\n"
+    "  10-K    — annual report (full-year financials, risk factors, business overview)\n"
+    "  10-Q    — quarterly report (interim financials, quarter-over-quarter trends)\n"
+    "  8-K     — current report (material events: earnings releases, M&A, leadership changes)\n"
+    "  Earnings — earnings call transcript (management commentary, analyst Q&A)\n\n"
+    "Output the relevant document types inside <sources> and </sources> as a "
     "comma-separated list. Use only these values: DEF14A, 10-K, 10-Q, 8-K, Earnings.\n"
-    "For example, <answer> 10-K, Earnings </answer>.\n\nQuestion: "
+    "For example, <sources> 10-K, Earnings </sources>.\n\nQuestion: "
 )
 
 
@@ -134,10 +145,8 @@ def question_mentions_company_name(question: str, company_name: str) -> bool:
     return normalized_company_name in normalized_question
 
 
-def rephrase_financebench_question(question: str, year: str) -> str:
-    if question_mentions_year(question, year):
-        return question
-    return f"For the year {year}, {question}"
+def _lowercase_question(question: str) -> str:
+    return question[:1].lower() + question[1:]
 
 
 @functools.lru_cache(maxsize=1024)
@@ -146,21 +155,25 @@ def resolve_company_name(ticker: str) -> str:
     return company_name if company_name else ticker
 
 
-def rephrase_financial_qa_question(
-    question: str, company_name: str, year: str
-) -> str:
+def rephrase_financebench_question(question: str, year: str) -> str:
+    if question_mentions_year(question, year):
+        return question
+    return f"For the year {year}, {_lowercase_question(question)}"
+
+
+def rephrase_financial_qa_question(question: str, company_name: str, year: str) -> str:
     has_company_name = question_mentions_company_name(question, company_name)
     has_year = question_mentions_year(question, year)
     if has_company_name and has_year:
         return question
-
+    lowercased = _lowercase_question(question)
     templates = [
         "For {company_name} in {year}, {question}",
         "In {year}, for {company_name}, {question}",
         "Considering {company_name}'s {year} filing, {question}",
     ]
     template = QUESTION_REPHRASER_RANDOM.choice(templates)
-    return template.format(company_name=company_name, year=year, question=question)
+    return template.format(company_name=company_name, year=year, question=lowercased)
 
 
 def transform_financial_qa_row(row: dict) -> dict:
@@ -188,11 +201,14 @@ def is_supported_financial_qa_row(row: dict) -> bool:
 
 def load_financial_qa() -> Dataset:
     ds = load_dataset("virattt/financial-qa-10K", split="train")
-    filtered_ds = ds.filter(is_supported_financial_qa_row)
+    filtered_ds = ds.filter(
+        is_supported_financial_qa_row, load_from_cache_file=LOAD_FROM_CACHE_FILE
+    )
     return filtered_ds.map(
         transform_financial_qa_row,
         remove_columns=filtered_ds.column_names,
         features=QA_FEATURES,
+        load_from_cache_file=LOAD_FROM_CACHE_FILE,
     )
 
 
@@ -221,13 +237,17 @@ def is_supported_financebench_row(row: dict) -> bool:
     year = extract_year_from_doc_period(row["doc_period"])
     return is_year_supported(year)
 
+
 def load_financebench() -> Dataset:
     ds = load_dataset("PatronusAI/financebench", split="train")
-    filtered_ds = ds.filter(is_supported_financebench_row)
+    filtered_ds = ds.filter(
+        is_supported_financebench_row, load_from_cache_file=LOAD_FROM_CACHE_FILE
+    )
     return filtered_ds.map(
         transform_financebench_row,
         remove_columns=filtered_ds.column_names,
         features=QA_FEATURES,
+        load_from_cache_file=LOAD_FROM_CACHE_FILE,
     )
 
 
