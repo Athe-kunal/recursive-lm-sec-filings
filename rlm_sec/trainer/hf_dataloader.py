@@ -1,14 +1,23 @@
+import re
 from dataclasses import asdict, dataclass
-from datasets import Dataset, Features, Value, concatenate_datasets, load_dataset
+from datasets import (
+    Dataset,
+    Features,
+    Sequence,
+    Value,
+    concatenate_datasets,
+    load_dataset,
+)
 
 DEFAULT_SYSTEM_CONTENT = "You are a helpful and harmless assistant."
 DEFAULT_USER_CONTENT_PREFIX = (
     "Answer the given question. You must conduct reasoning inside <think> and </think> "
     "first every time you get new information. After reasoning, if you lack some knowledge, "
-    "you can call one of the two search tools below.\n\n"
-    "Tool 1 — SEC Filings (annual and quarterly reports):\n"
+    "you can call one of the tools below.\n\n"
+    "Tool 1 — SEC Filings (annual, quarterly, current, and proxy reports):\n"
     "  <search>SECFilingTool(query, ticker, year, filing_type)</search>\n"
-    "  filing_type is one of: 10-K (annual), 10-Q1, 10-Q2, 10-Q3 (quarterly).\n"
+    "  filing_type is one of: 10-K (annual), 10-Q1, 10-Q2, 10-Q3 (quarterly),\n"
+    "  8-K (current report / material events), DEF 14A (proxy statement).\n"
     "  Example: <search>SECFilingTool(cash flow from operations, AAPL, 2023, 10-K)</search>\n\n"
     "Tool 2 — Earnings Call Transcripts:\n"
     "  <search>EarningsTranscriptTool(query, ticker, year, quarter)</search>\n"
@@ -94,3 +103,70 @@ def load_financebench() -> Dataset:
 
 def load_combined_qa() -> Dataset:
     return concatenate_datasets([load_financial_qa(), load_financebench()])
+
+
+INDEX_TO_FILING_TYPE: dict[str, str] = {
+    "0": "DEF14A",
+    "1": "10-K",
+    "2": "10-Q",
+    "3": "8-K",
+    "4": "Earnings",
+}
+
+QUESTION_PATTERN = re.compile(r"Question:\s*(.+?)(?:\n\nDocument Types)", re.DOTALL)
+
+
+@dataclass(slots=True)
+class DocumentRankingExample:
+    prompt: list[dict[str, str]]
+    relevant: list[str]
+    not_relevant: list[str]
+    data_source: str
+
+
+DOCUMENT_RANKING_FEATURES = Features(
+    {
+        "prompt": [{"role": Value("string"), "content": Value("string")}],
+        "relevant": Sequence(Value("string")),
+        "not_relevant": Sequence(Value("string")),
+        "data_source": Value("string"),
+    }
+)
+
+
+def extract_question(content: str) -> str:
+    match = QUESTION_PATTERN.search(content)
+    return match.group(1).strip() if match else ""
+
+
+def parse_qrel(qrel: dict[str, int]) -> tuple[list[str], list[str]]:
+    relevant = sorted(
+        (idx for idx, score in qrel.items() if score > 0),
+        key=lambda idx: qrel[idx],
+        reverse=True,
+    )
+    not_relevant = [idx for idx, score in qrel.items() if score == 0]
+    return (
+        [INDEX_TO_FILING_TYPE[idx] for idx in relevant],
+        [INDEX_TO_FILING_TYPE[idx] for idx in not_relevant],
+    )
+
+
+def load_finance_agent_bench(file_path: str) -> Dataset:
+    ds = load_dataset("json", data_files=file_path, split="train")
+
+    def transform(row: dict) -> dict:
+        content = row["messages"][0]["content"]
+        question = extract_question(content)
+        relevant, not_relevant = parse_qrel(row["qrel"])
+        example = DocumentRankingExample(
+            prompt=build_qa_prompt(question),
+            relevant=relevant,
+            not_relevant=not_relevant,
+            data_source="financeAgentBench",
+        )
+        return asdict(example)
+
+    return ds.map(
+        transform, remove_columns=ds.column_names, features=DOCUMENT_RANKING_FEATURES
+    )

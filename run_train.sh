@@ -29,7 +29,7 @@ set -x
 #   bash examples/train/search/run_search.sh trainer.epochs=2 trainer.eval_interval=10
 
 # path for dataset (.parquet files) containing the prompts and metadata for each question
-DATA_DIR="$HOME/data/combined_qa"
+DATA_DIR="$HOME/data/finance_agent_bench"
 
 RUN_NAME="skyrl-search_2turns_maxgeneratelen_500-multiturn-sync-TIS_2.0"
 

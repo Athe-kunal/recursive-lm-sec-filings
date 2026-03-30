@@ -1254,21 +1254,22 @@ wheels = [
 
 [[package]]
 name = "finance-data-llm"
-version = "0.1.4"
+version = "0.1.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "aiohttp" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "loguru" },
     { name = "numpy" },
     { name = "playwright" },
     { name = "pydantic-settings" },
-    { name = "ratelimit" },
     { name = "uvicorn", extra = ["standard"] },
     { name = "yfinance" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/17/a8/189d73eb29941089fbd26589233fe3af14ebd4546cbf9fdc219cafc69f69/finance_data_llm-0.1.4.tar.gz", hash = "sha256:18688733faa4b2f0133d5f436193de71f2d263830c5a212aa0213252067e6a13", size = 46820, upload-time = "2026-03-27T21:59:40.27Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5c/41/23da3304fea6979f0f549c7c9fbe568743ef6b9f8324d0b8b25d624d8803/finance_data_llm-0.1.5.tar.gz", hash = "sha256:e2b95e552468c72abfe26563052a4deb6b7596a8e92de463fdbfaeb47e88db73", size = 48511, upload-time = "2026-03-29T22:44:36.185Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b1/e1/dbb36a9f3f2ce013600db4c454f3b2099e1fec2d299cf91b87a1a5364df2/finance_data_llm-0.1.4-py3-none-any.whl", hash = "sha256:30e15c6a8401cc20d70d99a983b62f4e06877172828cdfa60cf606fff7529296", size = 50349, upload-time = "2026-03-27T21:59:39.24Z" },
+    { url = "https://files.pythonhosted.org/packages/46/76/7d7d093197ffe2bd9714cc3518aec007dc1ad1f08d05eeafaa372374831b/finance_data_llm-0.1.5-py3-none-any.whl", hash = "sha256:f5478f1d7ce352385526fe1778db18e825a5186c8aa295696520cfa19cc1b743", size = 52434, upload-time = "2026-03-29T22:44:36.993Z" },
 ]
 
 [[package]]
@@ -4701,7 +4702,7 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.13.3" },
     { name = "black", specifier = ">=26.3.0" },
     { name = "datasets", specifier = ">=4.6.1" },
-    { name = "finance-data-llm", specifier = ">=0.1.4" },
+    { name = "finance-data-llm", specifier = ">=0.1.5" },
     { name = "ipykernel", specifier = ">=7.2.0" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "omegaconf", specifier = ">=2.3.0" },
