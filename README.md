@@ -1,60 +1,56 @@
 # recursive-lm-sec-filings
 
-Training/data pipeline built on top of the published `finance-data-llm` package.
+Finance search RL environment now migrated from SkyRL to **Prime RL + Verifiers**.
 
 ## What changed
 
-This repository no longer keeps local SEC download/OCR implementations.
-Instead, it imports those features directly from `finance_data_llm`:
+- SkyRL-specific environment wiring was replaced with a Verifiers-native custom multi-turn environment.
+- `rlm_sec.envs.finance_env` now exposes `create_finance_env(...)` backed by `verifiers.MultiTurnEnv`.
+- Tool execution is handled by async, HTTP-backed finance tools in `rlm_sec.envs.tools`.
+- Prime-compatible environment loader is available at:
+  - `rlm_sec.envs.prime_environment:load_environment`
 
-- SEC filings metadata/download utilities
-- OCR execution and markdown generation
-- Server entrypoint
+## Prime RL setup
 
-`settings.py` in this repo is still the local place for environment defaults used by
-the training and vector-index workflows.
+Follow Prime RL setup from the upstream README:
 
-## PRIME-RL + Verifiers environment
+1. Clone Prime RL:
+   ```bash
+   git clone https://github.com/PrimeIntellect-ai/prime-rl.git
+   cd prime-rl
+   ```
+2. Install dependencies:
+   ```bash
+   uv sync --all-extras
+   ```
+3. Install this environment package in editable mode:
+   ```bash
+   uv pip install -e /workspace/recursive-lm-sec-filings
+   ```
 
-`rlm_sec.envs.finance_env:load_environment` now exposes a Prime RL compatible
-Verifiers `ToolEnv` that wraps three finance tools:
+## Running RL training with Prime RL
 
-- `sec_filing_tool(query, ticker, year, filing_type)`
-- `earnings_transcript_tool(query, ticker, year, quarter)`
-- `company_name_to_ticker_tool(name)`
-
-The environment reads parquet data from `data/train.parquet` and
-`data/validation.parquet` by default and applies task-aware rewards for both QA and
-ranking tasks.
-
-Use `run_train.sh` as a starter wrapper for Prime RL's trainer entrypoint.
-
-## Server
-
-The server command is exposed through project scripts:
-
-```toml
-[project.scripts]
-finance-data-llm-server = "finance_data.cli:main"
-```
-
-### Spin up the server
-
-From this repository:
+From the `prime-rl` repository:
 
 ```bash
-uv sync
-uv run finance-data-llm-server
+bash /workspace/recursive-lm-sec-filings/run_train.sh
 ```
 
-Or with pip:
+Set these optional variables before launching:
 
-```bash
-pip install -e .
-finance-data-llm-server
-```
+- `RLM_SEC_TRAIN_DATA` (default: `/workspace/recursive-lm-sec-filings/data/train.parquet`)
+- `RLM_SEC_EVAL_DATA` (default: `/workspace/recursive-lm-sec-filings/data/validation.parquet`)
+- `RLM_SEC_TOPK` (default: `3`)
+- `RLM_SEC_TIMEOUT` (default: `30`)
+- `RLM_SEC_MAX_TURNS` (default: `4`)
 
-## Paths used by the pipeline
+## Environment protocol
 
-- SEC PDFs: `{sec_data_dir}/{ticker}-{year}/{form_name}.pdf`
-- OCR markdowns: `{olmocr_workspace}/markdown/{sec_data_dir}/{ticker}-{year}/{form_name}.pdf.md`
+The environment preserves the existing `<search>...</search>` and `<answer>...</answer>` protocol:
+
+- `<search>SECFilingTool(query, ticker, year, filing_type)</search>`
+- `<search>EarningsTranscriptTool(query, ticker, year, quarter)</search>`
+- `<search>CompanyNameToTickerTool(company name)</search>`
+- `<answer>final answer</answer>`
+
+Rewards are still computed using the existing scorers in `rlm_sec.envs.rewards`.

@@ -32,7 +32,7 @@ def _reward_ticker(ticker: str) -> float:
 
 
 def _reward_year(year: str) -> float:
-    if not len(year) != 4:
+    if len(year) != 4:
         return 0.0
     curr_year = datetime.datetime.now().year
     output_year = int(year)

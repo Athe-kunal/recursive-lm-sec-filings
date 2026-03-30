@@ -1,6 +1,0 @@
-[submodule "external/SkyRL"]
-	path = external/SkyRL
-	url = https://github.com/novasky-ai/SkyRL.git
-[submodule "SkyRL"]
-	path = SkyRL
-	url = https://github.com/NovaSky-AI/SkyRL.git

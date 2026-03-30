@@ -1,37 +1,28 @@
-#!/usr/bin/env bash
-set -euo pipefail
-set -x
+set -euxo pipefail
 
-# PRIME-RL training wrapper for the SEC filings Verifiers environment.
+# Prime RL training entrypoint for the finance verifiers environment.
 #
-# Setup reference:
-#   https://github.com/PrimeIntellect-ai/prime-rl#setup
-# Environment authoring reference:
-#   https://github.com/PrimeIntellect-ai/verifiers/blob/main/docs/environments.md
+# Setup (from Prime RL README):
+#   1) git clone https://github.com/PrimeIntellect-ai/prime-rl.git
+#   2) cd prime-rl && uv sync --all-extras
+#   3) Install this repo so Prime RL can import the environment:
+#        uv pip install -e /workspace/recursive-lm-sec-filings
 #
-# This script assumes PRIME-RL is installed in the current uv environment.
-# It also assumes this repository is available as an editable package so
-# PRIME-RL can import: rlm_sec.envs.finance_env:load_environment
+# This script assumes you run it from inside the prime-rl repository.
 
-: "${TRAIN_DATA:=data/train.parquet}"
-: "${EVAL_DATA:=data/validation.parquet}"
-: "${MAX_TURNS:=4}"
-: "${TOPK:=3}"
-: "${TIMEOUT:=30}"
-: "${LOG_REQUESTS:=false}"
-: "${TRAIN_CONFIG:=configs/debug/rl/train.toml}"
+: "${RLM_SEC_TRAIN_DATA:=/workspace/recursive-lm-sec-filings/data/train.parquet}"
+: "${RLM_SEC_EVAL_DATA:=/workspace/recursive-lm-sec-filings/data/validation.parquet}"
+: "${RLM_SEC_TOPK:=3}"
+: "${RLM_SEC_TIMEOUT:=30}"
+: "${RLM_SEC_MAX_TURNS:=4}"
 
-# PRIME-RL trainer entrypoint (from the official repository):
-#   uv run trainer @ <train_config>
-#
-# We forward environment-specific overrides so that PRIME-RL loads this repo's
-# verifiers ToolEnv factory.
-uv run trainer @ "${TRAIN_CONFIG}" \
-  env.module="rlm_sec.envs.finance_env:load_environment" \
-  env.kwargs.train_paths="['${TRAIN_DATA}']" \
-  env.kwargs.eval_paths="['${EVAL_DATA}']" \
-  env.kwargs.max_turns="${MAX_TURNS}" \
-  env.kwargs.topk="${TOPK}" \
-  env.kwargs.timeout="${TIMEOUT}" \
-  env.kwargs.log_requests="${LOG_REQUESTS}" \
-  "$@"
+export RLM_SEC_TRAIN_DATA
+export RLM_SEC_EVAL_DATA
+export RLM_SEC_TOPK
+export RLM_SEC_TIMEOUT
+export RLM_SEC_MAX_TURNS
+
+# Example debug run on Prime RL configs.
+# Update environment import path in your train TOML to use:
+#   rlm_sec.envs.prime_environment:load_environment
+uv run trainer @ configs/debug/rl/train.toml "$@"
