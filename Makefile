@@ -10,6 +10,7 @@ DATA_PARALLEL_SIZE     ?= 1
 PORT                   ?= 8000
 API_PORT               ?= 8002
 SERVER                 ?= localhost
+PRIME_RL_DIR           ?= ../prime-rl
 
 .PHONY: vllm-olmocr-serve
 vllm-olmocr-serve:
@@ -40,3 +41,7 @@ start-server:
 .PHONY: test
 test:
 	uv run pytest tests/ -v
+
+.PHONY: train
+train:
+	cd $(PRIME_RL_DIR) && bash $(CURDIR)/run_train.sh
