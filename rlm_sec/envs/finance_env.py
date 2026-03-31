@@ -11,6 +11,9 @@ from omegaconf import DictConfig
 from rlm_sec.envs.rewards import (
     DataTaskType,
     TaskType,
+    compute_qa_company_to_ticker_score,
+    compute_qa_ticker_match_score,
+    compute_qa_year_match_score,
     compute_ranking_score,
     compute_score,
     reward_action_format,
@@ -156,15 +159,25 @@ def _tool_group_name(tool_name: ToolName) -> str:
             return "CompanyNameToTickerToolGroup"
 
 
+def _build_ground_truth(normalized_info: dict[str, Any]) -> dict[str, Any]:
+    """Build the ground_truth dict used by all scoring functions.
+
+    Top-level info fields (data_source, year, ticker, ticker_or_company_name) are
+    promoted into ground_truth so scoring helpers always find them in one place.
+    """
+    ground_truth = dict(normalized_info.get("ground_truth", {}))
+    for key in ("data_source", "year", "ticker", "ticker_or_company_name"):
+        if key in normalized_info and key not in ground_truth:
+            ground_truth[key] = normalized_info[key]
+    return ground_truth
+
+
 def _compute_terminal_reward(
     completion_text: str, info: dict[str, Any]
 ) -> QARewardBreakdown | RankingRewardBreakdown:
     """Compute terminal reward by task type (`qa` or `ranking`)."""
     task_type: DataTaskType = info.get("task_type", "qa")
-    ground_truth = dict(info.get("ground_truth", {}))
-    for key in ("data_source", "year", "ticker", "ticker_or_company_name"):
-        if key in info and key not in ground_truth:
-            ground_truth[key] = info[key]
+    ground_truth = _build_ground_truth(info)
 
     if task_type == "qa":
         qa_reward = compute_score(completion_text, ground_truth)
@@ -189,6 +202,16 @@ def _compute_terminal_reward(
 def _completion_to_text(completion: vf.Messages) -> str:
     """Flatten completion messages into a single string."""
     return "".join(message.get("content", "") for message in completion)
+
+
+def _assistant_turn_count(completion: vf.Messages) -> int:
+    """Return the number of assistant turns in a rollout completion."""
+    assistant_turns = sum(
+        1
+        for message in completion
+        if isinstance(message, dict) and message.get("role") == "assistant"
+    )
+    return max(assistant_turns, 1)
 
 
 def _normalize_info(info: dict[str, Any] | None) -> dict[str, Any]:
@@ -260,8 +283,10 @@ async def reward_correctness(
 async def reward_format(completion: vf.Messages, info: dict[str, Any] | None) -> float:
     """Reward function for format compliance.
 
-    For intermediate search calls this captures action-format quality. For final
-    answers, this returns the final-format reward from existing scorers.
+    When the final assistant message contains <answer> tags the terminal format
+    score is returned (0-1.3 for QA with ground-truth matches, 0-1 for ranking).
+    Otherwise the intermediate action-format score for the last search call is
+    returned as a fallback (rollout ended at max_turns without an answer).
     """
     normalized_info = _normalize_info(info)
     completion_text = _completion_to_text(completion)
@@ -269,9 +294,73 @@ async def reward_format(completion: vf.Messages, info: dict[str, Any] | None) ->
     latest_action = completion[-1].get("content", "") if completion else ""
     if "<answer>" in latest_action and "</answer>" in latest_action:
         reward = _compute_terminal_reward(completion_text, normalized_info)
+        if normalized_info.get("task_type") == "qa":
+            return reward.format / _assistant_turn_count(completion)
         return reward.format
 
     return _intermediate_format_reward(_parse_search_action(latest_action))
+
+
+# ---------------------------------------------------------------------------
+# Metric-only reward functions (weight=0 in the rubric — observability only).
+# These never contribute to the training signal but appear in rollout logs.
+# ---------------------------------------------------------------------------
+
+
+async def reward_ranking_precision(
+    completion: vf.Messages, info: dict[str, Any] | None
+) -> float:
+    """Metric: source-prediction precision for ranking episodes."""
+    normalized_info = _normalize_info(info)
+    if normalized_info.get("task_type") != "ranking":
+        return 0.0
+    completion_text = _completion_to_text(completion)
+    ground_truth = _build_ground_truth(normalized_info)
+    result = compute_ranking_score(completion_text, ground_truth)
+    return result.precision
+
+
+async def reward_ranking_recall(
+    completion: vf.Messages, info: dict[str, Any] | None
+) -> float:
+    """Metric: source-prediction recall for ranking episodes."""
+    normalized_info = _normalize_info(info)
+    if normalized_info.get("task_type") != "ranking":
+        return 0.0
+    completion_text = _completion_to_text(completion)
+    ground_truth = _build_ground_truth(normalized_info)
+    result = compute_ranking_score(completion_text, ground_truth)
+    return result.recall
+
+
+async def reward_qa_company_to_ticker(
+    completion: vf.Messages, info: dict[str, Any] | None
+) -> float:
+    """Metric: 1.0 when CompanyNameToTickerTool was used correctly."""
+    normalized_info = _normalize_info(info)
+    completion_text = _completion_to_text(completion)
+    ground_truth = _build_ground_truth(normalized_info)
+    return compute_qa_company_to_ticker_score(completion_text, ground_truth)
+
+
+async def reward_qa_ticker_match(
+    completion: vf.Messages, info: dict[str, Any] | None
+) -> float:
+    """Metric: 1.0 when the correct ticker appeared in a search call."""
+    normalized_info = _normalize_info(info)
+    completion_text = _completion_to_text(completion)
+    ground_truth = _build_ground_truth(normalized_info)
+    return compute_qa_ticker_match_score(completion_text, ground_truth)
+
+
+async def reward_qa_year_match(
+    completion: vf.Messages, info: dict[str, Any] | None
+) -> float:
+    """Metric: 1.0 when the correct year appeared in a search call."""
+    normalized_info = _normalize_info(info)
+    completion_text = _completion_to_text(completion)
+    ground_truth = _build_ground_truth(normalized_info)
+    return compute_qa_year_match_score(completion_text, ground_truth)
 
 
 def create_finance_env(
@@ -294,6 +383,11 @@ def create_finance_env(
         log_requests=config.log_requests,
     )
     rubric = vf.Rubric(funcs=[reward_correctness, reward_format], weights=[1.0, 1.0])
+    rubric.add_metric(reward_ranking_precision)
+    rubric.add_metric(reward_ranking_recall)
+    rubric.add_metric(reward_qa_company_to_ticker)
+    rubric.add_metric(reward_qa_ticker_match)
+    rubric.add_metric(reward_qa_year_match)
 
     return FinanceSearchEnv(
         tools=tools,

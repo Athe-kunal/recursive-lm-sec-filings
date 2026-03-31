@@ -42,6 +42,10 @@ ocr-md = [
 [project.scripts]
 finance-data-llm-server = "finance_data.cli:main"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
 [tool.uv]
 # Omit `environments` so the lockfile is not Linux-only (avoids "not compatible with lockfile" on macOS/Windows).
 # cached-path (via olmocr) requires rich<14 in some setups; keep modern rich by default.

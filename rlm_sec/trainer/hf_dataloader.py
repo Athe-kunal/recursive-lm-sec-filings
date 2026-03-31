@@ -37,17 +37,17 @@ DEFAULT_USER_CONTENT_PREFIX = (
     "earnings call, proxy statement, or current report) before calling any tool.\n\n"
     "You have three tools available:\n\n"
     "Tool 1 — Resolve company name to ticker (use this if you only have a company name):\n"
-    "  Schema: {\"company_name\": string}\n"
+    '  Schema: {"company_name": string}\n'
     "  <search>CompanyNameToTickerTool(company_name)</search>\n"
     "  Example: <search>CompanyNameToTickerTool(Apple Inc.)</search>\n\n"
     "Tool 2 — SEC Filings (annual, quarterly, current, and proxy reports):\n"
-    "  Schema: {\"query\": string, \"ticker\": string, \"year\": string, \"filing_type\": string}\n"
+    '  Schema: {"query": string, "ticker": string, "year": string, "filing_type": string}\n'
     "  filing_type is one of: 10-K (annual), 10-Q1, 10-Q2, 10-Q3 (quarterly),\n"
     "  8-K (current report / material events), DEF 14A (proxy statement).\n"
     "  <search>SECFilingTool(query, ticker, year, filing_type)</search>\n"
     "  Example: <search>SECFilingTool(cash flow from operations, AAPL, 2023, 10-K)</search>\n\n"
     "Tool 3 — Earnings Call Transcripts:\n"
-    "  Schema: {\"query\": string, \"ticker\": string, \"year\": string, \"quarter\": string}\n"
+    '  Schema: {"query": string, "ticker": string, "year": string, "quarter": string}\n'
     "  quarter is one of: Q1, Q2, Q3, Q4.\n"
     "  <search>EarningsTranscriptTool(query, ticker, year, quarter)</search>\n"
     "  Example: <search>EarningsTranscriptTool(cash flow from operations, MSFT, 2023, Q2)</search>\n\n"
