@@ -11,7 +11,7 @@ from finance_data.earnings_transcripts.transcripts import (
     get_transcript_for_quarter_async,
     save_transcript_markdown,
 )
-from finance_data.filings.sec_data import sec_main_to_markdown_and_embed
+from finance_data.dataloader.pipeline import sec_main_to_markdown_and_embed
 from settings import EARNINGS_TRANSCRIPT_TOOL_ENDPOINT, SEC_FILING_TOOL_ENDPOINT
 
 log = logging.getLogger(__name__)
