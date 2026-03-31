@@ -9,8 +9,9 @@ num_infer_gpus = 2
 name = "Qwen/Qwen3-4B-Instruct-2507"
 
 [wandb]
-project = "wiki-search"
-name = "wiki-search"
+project = "sec-filings-rl"
+name = "sec-filings-lora"
+shared = true
 
 [trainer.optim]
 lr = 1e-5
@@ -18,6 +19,8 @@ weight_decay = 0.0
 
 [trainer.model.lora]
 rank = 8
+alpha = 32
+
 dropout = 0.0
 target_modules = [
     "q_proj",
@@ -26,7 +29,7 @@ target_modules = [
     "o_proj",
     "gate_proj",
     "up_proj",
-    "down_proj"
+    "down_proj",
 ]
 
 [orchestrator]
@@ -35,7 +38,7 @@ rollouts_per_example = 16
 oversampling_factor = 2.0
 
 [orchestrator.model.lora]
-name = "qwen3-4b-wiki-search"
+name = "qwen3-4b-sec-filings-lora"
 
 [orchestrator.sampling]
 max_tokens = 512
@@ -44,9 +47,7 @@ max_tokens = 512
 online_difficulty_filtering = true
 
 [[orchestrator.env]]
-id = "primeintellect/wiki-search"
+id = "rlm_sec.envs.prime_environment:load_environment"
+name = "sec-filings"
 
-[ckpt] # Checkpoint at the end of training
-
-[inference.model]
-tool_call_parser = "hermes"
+[ckpt]
