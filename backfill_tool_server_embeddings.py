@@ -1,14 +1,9 @@
-"""Backfill SEC filing and transcript embeddings through the FastAPI tool server.
+"""Backfill SEC filing and transcript embeddings directly.
 
 This script reads the local parquet splits from ``data/`` with Hugging Face
 Datasets, derives the unique ticker/year targets for the requested data
-sources, and then calls the existing tool server endpoints with a dummy query.
-
-The server-side endpoints already handle:
-1. downloading the filing or transcript,
-2. OCR / markdown conversion for filings,
-3. embedding into the vector store, and
-4. running a search query.
+sources, and then embeds the matching SEC filings and earnings transcripts
+without routing through the FastAPI tool server.
 
 Any individual failure is logged and skipped so the batch can continue.
 """
@@ -20,14 +15,13 @@ import asyncio
 import logging
 from typing import NamedTuple
 
-import httpx
 import yfinance as yf  # type: ignore[import-untyped]
 from datasets import Dataset, load_dataset  # type: ignore[import-untyped]
-
-from settings import (
-    EARNINGS_TRANSCRIPT_TOOL_ENDPOINT,
-    SEC_FILING_TOOL_ENDPOINT,
-    env_settings,
+from finance_data.dataloader.pipeline import sec_main_to_markdown_and_embed
+from finance_data.dataloader.vector_store import ChromaVectorStore
+from finance_data.earnings_transcripts.transcripts import (
+    get_transcript_for_quarter_async,
+    save_transcript_markdown,
 )
 
 
@@ -36,7 +30,6 @@ FINANCEBENCH_SOURCE = "PatronusAI/financebench"
 SUPPORTED_SOURCES = {FINANCIAL_QA_SOURCE, FINANCEBENCH_SOURCE}
 SEC_FILING_TYPES = ("10-K", "10-Q1", "10-Q2", "10-Q3", "8-K", "DEF 14A")
 EARNINGS_QUARTERS = ("Q1", "Q2", "Q3", "Q4")
-DEFAULT_DUMMY_QUERY = "risk factors and management discussion"
 
 log = logging.getLogger(__name__)
 
@@ -54,15 +47,11 @@ class TickerYear(NamedTuple):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Backfill SEC filings and earnings transcripts via the tool server."
+        description="Backfill SEC filings and earnings transcripts directly."
     )
     parser.add_argument("--train-path", default="data/train.parquet")
     parser.add_argument("--validation-path", default="data/validation.parquet")
-    parser.add_argument("--server-url", default=env_settings.server_url)
-    parser.add_argument("--dummy-query", default=DEFAULT_DUMMY_QUERY)
-    parser.add_argument("--top-k", type=int, default=1)
-    parser.add_argument("--concurrency", type=int, default=16)
-    parser.add_argument("--timeout-seconds", type=float, default=120.0)
+    parser.add_argument("--concurrency", type=int, default=4)
     return parser.parse_args()
 
 
@@ -202,108 +191,134 @@ def build_ticker_year_targets(dataset: Dataset) -> set[TickerYear]:
     return ticker_year_targets
 
 
-def make_sec_payload(
+def is_filing_embedded(
+    vector_store: ChromaVectorStore,
+    ticker: str,
+    year: str,
+    filing_type: str,
+) -> bool:
+    existing = vector_store.list_filings(ticker, year)
+    return any(filing["filing_type"] == filing_type for filing in existing)
+
+
+async def embed_sec_filing(
+    semaphore: asyncio.Semaphore,
     ticker_year: TickerYear,
     filing_type: str,
-    query: str,
-    top_k: int,
-) -> dict[str, str | int]:
-    return {
-        "ticker": ticker_year.ticker,
-        "year": ticker_year.year,
-        "filing_type": filing_type,
-        "query": query,
-        "top_k": top_k,
-    }
-
-
-def make_transcript_payload(
-    ticker_year: TickerYear,
-    quarter: str,
-    query: str,
-    top_k: int,
-) -> dict[str, str | int]:
-    return {
-        "ticker": ticker_year.ticker,
-        "year": ticker_year.year,
-        "filing_type": quarter,
-        "query": query,
-        "top_k": top_k,
-    }
-
-
-async def post_payload(
-    client: httpx.AsyncClient,
-    semaphore: asyncio.Semaphore,
-    endpoint: str,
-    payload: dict[str, str | int],
 ) -> None:
     async with semaphore:
-        try:
-            response = await client.post(endpoint, json=payload)
-            response.raise_for_status()
+        vector_store = ChromaVectorStore()
+        if is_filing_embedded(
+            vector_store=vector_store,
+            ticker=ticker_year.ticker,
+            year=ticker_year.year,
+            filing_type=filing_type,
+        ):
             log.info(
-                f"Completed request: {payload['ticker']=} {payload['year']=} "
-                f"{payload['filing_type']=} {response.status_code=}"
+                f"Skipping already embedded SEC filing: {ticker_year.ticker=} "
+                f"{ticker_year.year=} {filing_type=}"
+            )
+            return
+
+        try:
+            await sec_main_to_markdown_and_embed(
+                ticker=ticker_year.ticker,
+                year=ticker_year.year,
+                filing_type=filing_type,
+            )
+            log.info(
+                f"Embedded SEC filing: {ticker_year.ticker=} "
+                f"{ticker_year.year=} {filing_type=}"
             )
         except Exception as exc:  # noqa: BLE001
             log.warning(
-                f"Skipping failed request: {payload['ticker']=} {payload['year']=} "
-                f"{payload['filing_type']=} {exc=}"
+                f"Skipping failed SEC filing: {ticker_year.ticker=} "
+                f"{ticker_year.year=} {filing_type=} {exc=}"
+            )
+
+
+async def embed_earnings_transcript(
+    semaphore: asyncio.Semaphore,
+    ticker_year: TickerYear,
+    quarter: str,
+) -> None:
+    async with semaphore:
+        vector_store = ChromaVectorStore()
+        if is_filing_embedded(
+            vector_store=vector_store,
+            ticker=ticker_year.ticker,
+            year=ticker_year.year,
+            filing_type=quarter,
+        ):
+            log.info(
+                f"Skipping already embedded transcript: {ticker_year.ticker=} "
+                f"{ticker_year.year=} {quarter=}"
+            )
+            return
+
+        try:
+            transcript = await get_transcript_for_quarter_async(
+                ticker=ticker_year.ticker,
+                year=int(ticker_year.year),
+                quarter=quarter,
+            )
+            if transcript is None:
+                log.warning(
+                    f"Skipping missing transcript: {ticker_year.ticker=} "
+                    f"{ticker_year.year=} {quarter=}"
+                )
+                return
+
+            transcript_path = save_transcript_markdown(transcript)
+            vector_store.from_earnings_transcript_markdown(
+                ticker=ticker_year.ticker,
+                year=ticker_year.year,
+                transcript_paths=[transcript_path],
+            )
+            log.info(
+                f"Embedded transcript: {ticker_year.ticker=} "
+                f"{ticker_year.year=} {quarter=} {transcript_path=}"
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning(
+                f"Skipping failed transcript: {ticker_year.ticker=} "
+                f"{ticker_year.year=} {quarter=} {exc=}"
             )
 
 
 async def backfill_sec_filings(
-    client: httpx.AsyncClient,
     ticker_year_targets: set[TickerYear],
-    query: str,
-    top_k: int,
     concurrency: int,
 ) -> None:
     semaphore = asyncio.Semaphore(concurrency)
     tasks = [
-        post_payload(
-            client=client,
+        embed_sec_filing(
             semaphore=semaphore,
-            endpoint=SEC_FILING_TOOL_ENDPOINT,
-            payload=make_sec_payload(
-                ticker_year=ticker_year,
-                filing_type=filing_type,
-                query=query,
-                top_k=top_k,
-            ),
+            ticker_year=ticker_year,
+            filing_type=filing_type,
         )
         for ticker_year in sorted(ticker_year_targets)
         for filing_type in SEC_FILING_TYPES
     ]
-    log.info(f"Submitting SEC filing requests: {len(tasks)=}")
+    log.info(f"Submitting SEC filing embedding tasks: {len(tasks)=}")
     await asyncio.gather(*tasks)
 
 
 async def backfill_earnings_transcripts(
-    client: httpx.AsyncClient,
     ticker_year_targets: set[TickerYear],
-    query: str,
-    top_k: int,
     concurrency: int,
 ) -> None:
     semaphore = asyncio.Semaphore(concurrency)
     tasks = [
-        post_payload(
-            client=client,
+        embed_earnings_transcript(
             semaphore=semaphore,
-            endpoint=EARNINGS_TRANSCRIPT_TOOL_ENDPOINT,
-            payload=make_transcript_payload(
-                ticker_year=ticker_year,
-                quarter=quarter,
-                query=query,
-                top_k=top_k,
-            ),
+            ticker_year=ticker_year,
+            quarter=quarter,
         )
         for ticker_year in sorted(ticker_year_targets)
         for quarter in EARNINGS_QUARTERS
     ]
-    log.info(f"Submitting earnings transcript requests: {len(tasks)=}")
+    log.info(f"Submitting earnings transcript embedding tasks: {len(tasks)=}")
     await asyncio.gather(*tasks)
 
 
@@ -313,27 +328,18 @@ async def async_main(args: argparse.Namespace) -> None:
         validation_path=args.validation_path,
     )
     ticker_year_targets = build_ticker_year_targets(dataset)
-    timeout = httpx.Timeout(args.timeout_seconds)
 
-    log.info(
-        f"{args.server_url=} {args.dummy_query=} {args.top_k=} "
-        f"{args.concurrency=} {args.timeout_seconds=}"
+    log.info(f"{args.concurrency=} {len(ticker_year_targets)=}")
+    await asyncio.gather(
+        backfill_sec_filings(
+            ticker_year_targets=ticker_year_targets,
+            concurrency=args.concurrency,
+        ),
+        backfill_earnings_transcripts(
+            ticker_year_targets=ticker_year_targets,
+            concurrency=args.concurrency,
+        ),
     )
-    async with httpx.AsyncClient(base_url=args.server_url, timeout=timeout) as client:
-        await backfill_sec_filings(
-            client=client,
-            ticker_year_targets=ticker_year_targets,
-            query=args.dummy_query,
-            top_k=args.top_k,
-            concurrency=args.concurrency,
-        )
-        await backfill_earnings_transcripts(
-            client=client,
-            ticker_year_targets=ticker_year_targets,
-            query=args.dummy_query,
-            top_k=args.top_k,
-            concurrency=args.concurrency,
-        )
 
 
 def main() -> None:

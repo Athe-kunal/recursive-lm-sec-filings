@@ -1,14 +1,14 @@
 MODEL := allenai/olmOCR-2-7B-1025-FP8
 
-GPU_MEMORY_UTILIZATION ?= 0.5
+GPU_MEMORY_UTILIZATION ?= 0.7
 EMBD_GPU_MEMORY_UTILIZATION ?= 0.1
 EMBD_MODEL ?= Qwen/Qwen3-Embedding-0.6B
-EMBD_PORT ?= 8888
-MAX_MODEL_LEN          ?= 16384
+EMBD_PORT ?= 8002
+MAX_MODEL_LEN          ?= 8192
 TENSOR_PARALLEL_SIZE   ?= 1
 DATA_PARALLEL_SIZE     ?= 1
 PORT                   ?= 8000
-API_PORT               ?= 8002
+API_PORT               ?= 8888
 SERVER                 ?= localhost
 PRIME_RL_DIR           ?= prime-rl/
 
@@ -19,7 +19,7 @@ vllm-olmocr-serve:
 		--max-model-len $(MAX_MODEL_LEN) \
 		--tensor-parallel-size $(TENSOR_PARALLEL_SIZE) \
 		--data-parallel-size $(DATA_PARALLEL_SIZE) \
-		--max-num-batched_tokens 65536 \
+		--max-num-batched_tokens 16384 \
 		--max-num-seqs 8192 \
 		--limit-mm-per-prompt '{"video": 0}' \
 		--port $(PORT) \
