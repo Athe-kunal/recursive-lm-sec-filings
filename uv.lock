@@ -1231,7 +1231,7 @@ wheels = [
 
 [[package]]
 name = "finance-data-llm"
-version = "0.1.5"
+version = "0.1.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1244,9 +1244,9 @@ dependencies = [
     { name = "uvicorn", extra = ["standard"] },
     { name = "yfinance" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5c/41/23da3304fea6979f0f549c7c9fbe568743ef6b9f8324d0b8b25d624d8803/finance_data_llm-0.1.5.tar.gz", hash = "sha256:e2b95e552468c72abfe26563052a4deb6b7596a8e92de463fdbfaeb47e88db73", size = 48511, upload-time = "2026-03-29T22:44:36.185Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e1/ae/cdc48140b994e83b12a15df1880a2a1f6a5cbd04abb594256a373a265b67/finance_data_llm-0.1.7.tar.gz", hash = "sha256:d5d17c93f16934b8de74f1626e67817e675684002493ce58d8f21986ba15d4c5", size = 52463, upload-time = "2026-04-01T09:02:12.282Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/76/7d7d093197ffe2bd9714cc3518aec007dc1ad1f08d05eeafaa372374831b/finance_data_llm-0.1.5-py3-none-any.whl", hash = "sha256:f5478f1d7ce352385526fe1778db18e825a5186c8aa295696520cfa19cc1b743", size = 52434, upload-time = "2026-03-29T22:44:36.993Z" },
+    { url = "https://files.pythonhosted.org/packages/96/24/3d6e18000e58c512fbb39cde89e06829b401e2d532eb30698b169662bcb5/finance_data_llm-0.1.7-py3-none-any.whl", hash = "sha256:190a1c40d96a6f015366eacba0edcbcd5e8b99754704412144898e0f04580cda", size = 59466, upload-time = "2026-04-01T09:02:13.777Z" },
 ]
 
 [[package]]
@@ -4575,6 +4575,18 @@ wheels = [
 ]
 
 [[package]]
+name = "rank-bm25"
+version = "0.2.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fc/0a/f9579384aa017d8b4c15613f86954b92a95a93d641cc849182467cf0bb3b/rank_bm25-0.2.2.tar.gz", hash = "sha256:096ccef76f8188563419aaf384a02f0ea459503fdf77901378d4fd9d87e5e51d", size = 8347, upload-time = "2022-02-16T12:10:52.196Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/21/f691fb2613100a62b3fa91e9988c991e9ca5b89ea31c0d3152a3210344f9/rank_bm25-0.2.2-py3-none-any.whl", hash = "sha256:7bd4a95571adadfc271746fa146a4bcfd89c0cf731e49c3d1ad863290adbe8ae", size = 8584, upload-time = "2022-02-16T12:10:50.626Z" },
+]
+
+[[package]]
 name = "ratelimit"
 version = "2.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -4627,6 +4639,7 @@ dependencies = [
     { name = "loguru" },
     { name = "omegaconf" },
     { name = "pillow" },
+    { name = "rank-bm25" },
     { name = "ratelimit" },
     { name = "requests" },
     { name = "safetensors" },
@@ -4658,11 +4671,12 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.13.3" },
     { name = "black", specifier = ">=26.3.0" },
     { name = "datasets", specifier = ">=4.6.1" },
-    { name = "finance-data-llm", specifier = ">=0.1.5" },
+    { name = "finance-data-llm", specifier = ">=0.1.7" },
     { name = "ipykernel", specifier = ">=7.2.0" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "omegaconf", specifier = ">=2.3.0" },
     { name = "pillow", specifier = ">=12.1.1" },
+    { name = "rank-bm25", specifier = ">=0.2.2" },
     { name = "ratelimit", specifier = ">=2.2.1" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "safetensors", specifier = ">=0.7.0" },
