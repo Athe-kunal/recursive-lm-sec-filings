@@ -71,7 +71,7 @@ async def sec_filings_to_embed_and_search(
         )
 
     try:
-        hits = vector_store.search(
+        hits = vector_store.hybrid_search(
             ticker=request.ticker,
             year=request.year,
             filing_type=request.filing_type,
@@ -118,7 +118,7 @@ async def earnings_transcript_to_embed_and_search(
         )
 
     try:
-        hits = vector_store.search(
+        hits = vector_store.hybrid_search(
             ticker=request.ticker,
             year=request.year,
             filing_type=request.filing_type,
