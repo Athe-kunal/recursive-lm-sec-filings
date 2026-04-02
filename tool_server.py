@@ -1,6 +1,6 @@
 import dataclasses
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -11,6 +11,7 @@ from finance_data.earnings_transcripts.transcripts import (
     get_transcript_for_quarter_async,
     save_transcript_markdown,
 )
+from finance_data.filings import models as filings_models
 from finance_data.dataloader.pipeline import sec_main_to_markdown_and_embed
 from settings import EARNINGS_TRANSCRIPT_TOOL_ENDPOINT, SEC_FILING_TOOL_ENDPOINT
 
@@ -23,7 +24,7 @@ class SecFilingRequest(BaseModel):
     query: str
     ticker: str
     year: str
-    filing_type: str
+    filing_type: filings_models.SecFilingType
     top_k: int = 3
 
 
@@ -31,7 +32,7 @@ class EarningsTranscriptRequest(BaseModel):
     query: str
     ticker: str
     year: str
-    filing_type: str  # quarter label e.g. "Q1"
+    quarter: Literal["Q1", "Q2", "Q3", "Q4"] | str  # quarter label e.g. "Q1"
     top_k: int = 3
 
 
@@ -88,26 +89,24 @@ async def sec_filings_to_embed_and_search(
 async def earnings_transcript_to_embed_and_search(
     request: EarningsTranscriptRequest,
 ) -> list[dict[str, Any]]:
-    log.info(
-        f"{request.ticker=} {request.year=} {request.filing_type=} {request.query=}"
-    )
+    log.info(f"{request.ticker=} {request.year=} {request.quarter=} {request.query=}")
     vector_store = ChromaVectorStore()
 
     if not _is_filing_embedded(
-        vector_store, request.ticker, request.year, request.filing_type
+        vector_store, request.ticker, request.year, request.quarter
     ):
         log.info(
-            f"Fetching transcript: {request.ticker=} {request.year=} {request.filing_type=}"
+            f"Fetching transcript: {request.ticker=} {request.year=} {request.quarter=}"
         )
         transcript = await get_transcript_for_quarter_async(
             ticker=request.ticker,
             year=int(request.year),
-            quarter=request.filing_type,
+            quarter=request.quarter,
         )
         if transcript is None:
             raise HTTPException(
                 status_code=404,
-                detail=f"Transcript not found: {request.ticker=} {request.year=} {request.filing_type=}",
+                detail=f"Transcript not found: {request.ticker=} {request.year=} {request.quarter=}",
             )
 
         transcript_path = save_transcript_markdown(transcript)
@@ -121,7 +120,7 @@ async def earnings_transcript_to_embed_and_search(
         hits = vector_store.hybrid_search(
             ticker=request.ticker,
             year=request.year,
-            filing_type=request.filing_type,
+            filing_type=request.quarter,
             query=request.query,
             top_k=request.top_k,
         )
