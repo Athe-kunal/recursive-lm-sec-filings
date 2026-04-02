@@ -212,6 +212,8 @@ output/
 
 localworkspace/
 
-data/
-
 faiss_indexes/
+
+chroma_db/
+*.jsonl
+earnings_transcripts_data/

@@ -1,15 +1,16 @@
 MODEL := allenai/olmOCR-2-7B-1025-FP8
 
-GPU_MEMORY_UTILIZATION ?= 0.97
+GPU_MEMORY_UTILIZATION ?= 0.7
 EMBD_GPU_MEMORY_UTILIZATION ?= 0.1
 EMBD_MODEL ?= Qwen/Qwen3-Embedding-0.6B
 EMBD_PORT ?= 8002
-MAX_MODEL_LEN          ?= 16384
-TENSOR_PARALLEL_SIZE   ?= 2
+MAX_MODEL_LEN          ?= 8192
+TENSOR_PARALLEL_SIZE   ?= 1
 DATA_PARALLEL_SIZE     ?= 1
 PORT                   ?= 8000
 API_PORT               ?= 8888
 SERVER                 ?= localhost
+PRIME_RL_DIR           ?= prime-rl/
 
 .PHONY: vllm-olmocr-serve
 vllm-olmocr-serve:
@@ -18,7 +19,7 @@ vllm-olmocr-serve:
 		--max-model-len $(MAX_MODEL_LEN) \
 		--tensor-parallel-size $(TENSOR_PARALLEL_SIZE) \
 		--data-parallel-size $(DATA_PARALLEL_SIZE) \
-		--max-num-batched_tokens 65536 \
+		--max-num-batched_tokens 16384 \
 		--max-num-seqs 8192 \
 		--limit-mm-per-prompt '{"video": 0}' \
 		--port $(PORT) \
@@ -33,6 +34,21 @@ vllm-embd-serve:
 		--port $(EMBD_PORT) \
 		--host $(SERVER)
 
+
 .PHONY: start-server
 start-server:
-	uv run uvicorn server:app --host 0.0.0.0 --reload --port $(API_PORT)
+	uv run uvicorn tool_server:app --host 0.0.0.0 --reload --port $(API_PORT)
+
+.PHONY: run-all
+run-all:
+	nohup $(MAKE) vllm-olmocr-serve >> olmocr.log 2>&1 &
+	nohup $(MAKE) vllm-embd-serve >> embd.log 2>&1 &
+	nohup $(MAKE) start-server >> server.log 2>&1 &
+
+.PHONY: test
+test:
+	uv run pytest tests/ -v
+
+.PHONY: train
+train:
+	cd $(PRIME_RL_DIR) && bash $(CURDIR)/run_train.sh

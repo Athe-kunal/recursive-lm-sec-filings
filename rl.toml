@@ -1,0 +1,53 @@
+max_steps = 200
+seq_len = 4096
+
+[deployment]
+num_train_gpus = 2
+num_infer_gpus = 2
+
+[model]
+name = "Qwen/Qwen2.5-1.5B-Instruct"
+
+[wandb]
+project = "sec-filings-rl"
+name = "sec-filings-lora"
+shared = true
+
+[trainer.optim]
+lr = 1e-5
+weight_decay = 0.0
+
+[trainer.model.lora]
+rank = 8
+alpha = 32
+
+dropout = 0.0
+target_modules = [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj",
+]
+
+[orchestrator]
+batch_size = 32
+rollouts_per_example = 16
+oversampling_factor = 2.0
+
+[orchestrator.model.lora]
+name = "qwen-sec-filings-lora"
+
+[orchestrator.sampling]
+max_tokens = 512
+
+[orchestrator.buffer]
+online_difficulty_filtering = true
+
+[[orchestrator.env]]
+id = "rlm_sec.envs.prime_environment:load_environment"
+name = "sec-filings"
+
+[ckpt]

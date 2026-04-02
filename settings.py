@@ -3,29 +3,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class EnvSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
-
-    # SEC API (required for filings; SEC requires User-Agent with org + email)
-    sec_api_organization: str = "Your-Organization"
-    sec_api_email: str = "your-email@example.com"
-
-    # olmOCR pipeline
-    olmocr_server: str = "http://localhost:8000/v1"
-    olmocr_model: str = "allenai/olmOCR-2-7B-1025-FP8"
-    olmocr_workspace: str = "./localworkspace"
-
-    # Downloaded SEC PDFs and sec_results.json: {sec_data_dir}/{ticker}-{year}/
-    sec_data_dir: str = "sec_data"
-
-    # Embedding server (vLLM pooling runner)
-    embedding_server: str = "http://127.0.0.1:8002/v1"
-    embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"
-
-    # FAISS vector index persistence
-    faiss_index_dir: str = "./faiss_indexes"
-    faiss_use_gpu: bool = False
-
     # FastAPI server URL
     server_url: str = "http://127.0.0.1:8888"
 
 
 env_settings = EnvSettings()
+
+# Tool server FastAPI route paths (typically joined with env_settings.server_url).
+SEC_FILING_TOOL_ENDPOINT = "/tools/sec_filings_to_embed_and_search"
+EARNINGS_TRANSCRIPT_TOOL_ENDPOINT = "/tools/earnings_transcript_to_embed_and_search"
