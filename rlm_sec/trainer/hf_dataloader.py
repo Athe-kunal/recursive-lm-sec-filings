@@ -324,7 +324,9 @@ def transform_financial_qa_row(row: dict) -> dict:
 
 def is_supported_financial_qa_row(row: dict) -> bool:
     year = extract_year_from_filing(row["filing"])
-    return is_year_supported(year)
+    if not is_year_supported(year):
+        return False
+    return has_training_data_for_ticker_year(row["ticker"], year)
 
 
 def load_financial_qa() -> Dataset:
@@ -363,7 +365,9 @@ def transform_financebench_row(row: dict) -> dict:
 
 def is_supported_financebench_row(row: dict) -> bool:
     year = extract_year_from_doc_period(row["doc_period"])
-    return is_year_supported(year)
+    if not is_year_supported(year):
+        return False
+    return has_training_data_for_ticker_year(row["company"], year)
 
 
 def load_financebench() -> Dataset:
