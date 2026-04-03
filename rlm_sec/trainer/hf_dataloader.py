@@ -13,6 +13,7 @@ from datasets import (
     concatenate_datasets,
     load_dataset,
 )
+from chromadb.api.models.Collection import Collection
 from finance_data.filings.utils import company_to_ticker
 import yfinance as yf
 
@@ -203,7 +204,7 @@ def load_available_ticker_year_pairs() -> set[tuple[str, str]]:
 
 
 def load_collection_metadatas_in_batches(
-    collection: object,
+    collection: Collection,
     batch_size: int,
 ) -> list[dict]:
     total_count = collection.count()
@@ -223,7 +224,7 @@ def load_collection_metadatas_in_batches(
     return metadatas
 
 
-def get_metadata_batch(collection: object, offset: int, limit: int) -> list[dict]:
+def get_metadata_batch(collection: Collection, offset: int, limit: int) -> list[dict]:
     results = collection.get(include=["metadatas"], limit=limit, offset=offset)
     raw_metadatas = results.get("metadatas", [])
     return [metadata for metadata in raw_metadatas if isinstance(metadata, dict)]
