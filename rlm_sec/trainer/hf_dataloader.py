@@ -5,7 +5,6 @@ import re
 import random
 from dataclasses import asdict, dataclass
 
-import chromadb
 from datasets import (
     Dataset,
     Features,
@@ -30,6 +29,9 @@ LOAD_FROM_CACHE_FILE: bool = os.getenv("LOAD_FROM_CACHE_FILE", "").lower() in {
     "true",
     "yes",
 }
+FILTER_UNSUPPORTED_TICKERS: bool = os.getenv(
+    "FILTER_UNSUPPORTED_TICKERS", ""
+).lower() in {"1", "true", "yes"}
 CHROMA_PATH = "chroma_db"
 CHROMA_COLLECTION = "sec_filings"
 QUESTION_REPHRASER_RANDOM = random.Random(2026)
@@ -181,6 +183,8 @@ def parse_ticker_year_from_metadata(metadata: dict) -> tuple[str, str] | None:
 
 @functools.lru_cache(maxsize=1)
 def load_available_ticker_year_pairs() -> set[tuple[str, str]]:
+    import chromadb
+
     client = chromadb.PersistentClient(path=CHROMA_PATH)
     collection = client.get_collection(name=CHROMA_COLLECTION)
     results = collection.get(include=["metadatas"], limit=None)
@@ -206,6 +210,24 @@ def has_training_data_for_ticker_year(ticker_or_company_name: str, year: str) ->
     if not has_pair:
         logger.info("%s", f"{pair=}")
     return has_pair
+
+
+def is_covered_qa_example_row(row: dict) -> bool:
+    return has_training_data_for_ticker_year(
+        ticker_or_company_name=row["ticker_or_company_name"],
+        year=row["year"],
+    )
+
+
+def maybe_filter_unsupported_ticker_rows(dataset: Dataset) -> Dataset:
+    if not FILTER_UNSUPPORTED_TICKERS:
+        logger.info("%s", f"{FILTER_UNSUPPORTED_TICKERS=}")
+        return dataset
+    logger.info("%s", f"{FILTER_UNSUPPORTED_TICKERS=}")
+    return dataset.filter(
+        is_covered_qa_example_row,
+        load_from_cache_file=LOAD_FROM_CACHE_FILE,
+    )
 
 
 def question_mentions_year(question: str, year: str) -> bool:
@@ -334,7 +356,8 @@ def load_financebench() -> Dataset:
 
 
 def load_combined_qa() -> Dataset:
-    return concatenate_datasets([load_financial_qa(), load_financebench()])
+    combined_dataset = concatenate_datasets([load_financial_qa(), load_financebench()])
+    return maybe_filter_unsupported_ticker_rows(combined_dataset)
 
 
 INDEX_TO_FILING_TYPE: dict[str, str] = {
