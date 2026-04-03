@@ -1,7 +1,11 @@
 import functools
+import logging
+import os
 import re
 import random
 from dataclasses import asdict, dataclass
+
+import chromadb
 from datasets import (
     Dataset,
     Features,
@@ -10,8 +14,10 @@ from datasets import (
     concatenate_datasets,
     load_dataset,
 )
+from finance_data.filings.utils import company_to_ticker
 import yfinance as yf
-import os
+
+logger = logging.getLogger(__name__)
 
 
 def get_company_name(ticker: str) -> str | None:
@@ -24,6 +30,8 @@ LOAD_FROM_CACHE_FILE: bool = os.getenv("LOAD_FROM_CACHE_FILE", "").lower() in {
     "true",
     "yes",
 }
+CHROMA_PATH = "chroma_db"
+CHROMA_COLLECTION = "sec_filings"
 QUESTION_REPHRASER_RANDOM = random.Random(2026)
 MIN_SUPPORTED_YEAR = 2020
 
@@ -133,6 +141,73 @@ def is_year_supported(year: str) -> bool:
     return int(year) >= MIN_SUPPORTED_YEAR
 
 
+def normalize_ticker_value(raw_value: str | None) -> str:
+    if raw_value is None:
+        return ""
+    return raw_value.strip().upper()
+
+
+def resolve_to_ticker(raw_value: str | None) -> str:
+    if raw_value is None:
+        return ""
+    resolved_ticker = company_to_ticker(raw_value)
+    normalized_ticker = (resolved_ticker or "").strip().upper()
+    if normalized_ticker:
+        return normalized_ticker
+    return normalize_ticker_value(raw_value)
+
+
+def normalize_year(raw_year: str | int | float | None) -> str:
+    if raw_year is None:
+        return ""
+    if isinstance(raw_year, float):
+        if raw_year.is_integer():
+            return str(int(raw_year))
+        return str(raw_year).strip()
+    return str(raw_year).strip()
+
+
+def build_ticker_year_pair(ticker: str, year: str) -> tuple[str, str]:
+    return ticker, year
+
+
+def parse_ticker_year_from_metadata(metadata: dict) -> tuple[str, str] | None:
+    ticker = normalize_ticker_value(str(metadata.get("ticker", "")))
+    year = normalize_year(metadata.get("year"))
+    if not ticker or not year:
+        return None
+    return build_ticker_year_pair(ticker, year)
+
+
+@functools.lru_cache(maxsize=1)
+def load_available_ticker_year_pairs() -> set[tuple[str, str]]:
+    client = chromadb.PersistentClient(path=CHROMA_PATH)
+    collection = client.get_collection(name=CHROMA_COLLECTION)
+    results = collection.get(include=["metadatas"], limit=None)
+    metadatas = results.get("metadatas", [])
+    available_pairs: set[tuple[str, str]] = set()
+    for metadata in metadatas:
+        if not isinstance(metadata, dict):
+            continue
+        pair = parse_ticker_year_from_metadata(metadata)
+        if pair is None:
+            continue
+        available_pairs.add(pair)
+    logger.info("%s", f"{len(available_pairs)=}")
+    return available_pairs
+
+
+def has_training_data_for_ticker_year(ticker_or_company_name: str, year: str) -> bool:
+    available_pairs = load_available_ticker_year_pairs()
+    normalized_ticker = resolve_to_ticker(ticker_or_company_name)
+    normalized_year = normalize_year(year)
+    pair = build_ticker_year_pair(normalized_ticker, normalized_year)
+    has_pair = pair in available_pairs
+    if not has_pair:
+        logger.info("%s", f"{pair=}")
+    return has_pair
+
+
 def question_mentions_year(question: str, year: str) -> bool:
     return re.search(rf"\b{re.escape(year)}\b", question) is not None
 
@@ -199,7 +274,9 @@ def transform_financial_qa_row(row: dict) -> dict:
 
 def is_supported_financial_qa_row(row: dict) -> bool:
     year = extract_year_from_filing(row["filing"])
-    return is_year_supported(year)
+    if not is_year_supported(year):
+        return False
+    return has_training_data_for_ticker_year(row["ticker"], year)
 
 
 def load_financial_qa() -> Dataset:
@@ -238,7 +315,9 @@ def transform_financebench_row(row: dict) -> dict:
 
 def is_supported_financebench_row(row: dict) -> bool:
     year = extract_year_from_doc_period(row["doc_period"])
-    return is_year_supported(year)
+    if not is_year_supported(year):
+        return False
+    return has_training_data_for_ticker_year(row["company"], year)
 
 
 def load_financebench() -> Dataset:
