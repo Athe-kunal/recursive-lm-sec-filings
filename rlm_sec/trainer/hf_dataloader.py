@@ -34,6 +34,7 @@ FILTER_UNSUPPORTED_TICKERS: bool = os.getenv(
 ).lower() in {"1", "true", "yes"}
 CHROMA_PATH = "chroma_db"
 CHROMA_COLLECTION = "sec_filings"
+CHROMA_GET_BATCH_SIZE = int(os.getenv("CHROMA_GET_BATCH_SIZE", "5000"))
 QUESTION_REPHRASER_RANDOM = random.Random(2026)
 MIN_SUPPORTED_YEAR = 2020
 
@@ -187,18 +188,45 @@ def load_available_ticker_year_pairs() -> set[tuple[str, str]]:
 
     client = chromadb.PersistentClient(path=CHROMA_PATH)
     collection = client.get_collection(name=CHROMA_COLLECTION)
-    results = collection.get(include=["metadatas"], limit=None)
-    metadatas = results.get("metadatas", [])
+    metadatas = load_collection_metadatas_in_batches(
+        collection=collection,
+        batch_size=CHROMA_GET_BATCH_SIZE,
+    )
     available_pairs: set[tuple[str, str]] = set()
     for metadata in metadatas:
-        if not isinstance(metadata, dict):
-            continue
         pair = parse_ticker_year_from_metadata(metadata)
         if pair is None:
             continue
         available_pairs.add(pair)
-    logger.info("%s", f"{len(available_pairs)=}")
+    logger.info(f"{len(available_pairs)=}")
     return available_pairs
+
+
+def load_collection_metadatas_in_batches(
+    collection: object,
+    batch_size: int,
+) -> list[dict]:
+    total_count = collection.count()
+    logger.info(f"{total_count=}")
+    logger.info(f"{batch_size=}")
+    metadatas: list[dict] = []
+    for offset in range(0, total_count, batch_size):
+        batch_metadatas = get_metadata_batch(
+            collection=collection,
+            offset=offset,
+            limit=batch_size,
+        )
+        metadatas.extend(batch_metadatas)
+        logger.info(f"{offset=}")
+        logger.info(f"{len(batch_metadatas)=}")
+    logger.info(f"{len(metadatas)=}")
+    return metadatas
+
+
+def get_metadata_batch(collection: object, offset: int, limit: int) -> list[dict]:
+    results = collection.get(include=["metadatas"], limit=limit, offset=offset)
+    raw_metadatas = results.get("metadatas", [])
+    return [metadata for metadata in raw_metadatas if isinstance(metadata, dict)]
 
 
 def has_training_data_for_ticker_year(ticker_or_company_name: str, year: str) -> bool:
@@ -208,7 +236,7 @@ def has_training_data_for_ticker_year(ticker_or_company_name: str, year: str) ->
     pair = build_ticker_year_pair(normalized_ticker, normalized_year)
     has_pair = pair in available_pairs
     if not has_pair:
-        logger.info("%s", f"{pair=}")
+        logger.info(f"{pair=}")
     return has_pair
 
 
@@ -221,9 +249,9 @@ def is_covered_qa_example_row(row: dict) -> bool:
 
 def maybe_filter_unsupported_ticker_rows(dataset: Dataset) -> Dataset:
     if not FILTER_UNSUPPORTED_TICKERS:
-        logger.info("%s", f"{FILTER_UNSUPPORTED_TICKERS=}")
+        logger.info(f"{FILTER_UNSUPPORTED_TICKERS=}")
         return dataset
-    logger.info("%s", f"{FILTER_UNSUPPORTED_TICKERS=}")
+    logger.info(f"{FILTER_UNSUPPORTED_TICKERS=}")
     return dataset.filter(
         is_covered_qa_example_row,
         load_from_cache_file=LOAD_FROM_CACHE_FILE,
