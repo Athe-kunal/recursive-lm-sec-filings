@@ -2,17 +2,12 @@ import dataclasses
 import logging
 from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
 
 from finance_data.dataloader.text_splitter import Chunk
 from finance_data.dataloader.vector_store import ChromaVectorStore
-from finance_data.earnings_transcripts.transcripts import (
-    get_transcript_for_quarter_async,
-    save_transcript_markdown,
-)
 from finance_data.filings import models as filings_models
-from finance_data.dataloader.pipeline import sec_main_to_markdown_and_embed
 from settings import EARNINGS_TRANSCRIPT_TOOL_ENDPOINT, SEC_FILING_TOOL_ENDPOINT
 
 log = logging.getLogger(__name__)
@@ -50,10 +45,34 @@ def _hits_to_chunk_dicts(hits: list[tuple[Chunk, float]]) -> list[dict[str, Any]
     return [dataclasses.asdict(chunk) for chunk, _ in hits]
 
 
+def _tool_error_response(
+    *,
+    error: str,
+    message: str,
+    ticker: str,
+    year: str,
+    requested: str,
+    vector_store: ChromaVectorStore,
+) -> dict[str, Any]:
+    available = vector_store.list_filings(ticker, year)
+    log.info(
+        f"tool error response: {error=} {message=} {ticker=} {year=} "
+        f"{requested=} {available=}"
+    )
+    return {
+        "error": error,
+        "message": message,
+        "ticker": ticker,
+        "year": year,
+        "requested": requested,
+        "available_filings": available,
+    }
+
+
 @app.post(SEC_FILING_TOOL_ENDPOINT)
 async def sec_filings_to_embed_and_search(
     request: SecFilingRequest,
-) -> list[dict[str, Any]]:
+) -> list[dict[str, Any]] | dict[str, Any]:
     log.info(
         f"{request.ticker=} {request.year=} {request.filing_type=} {request.query=}"
     )
@@ -62,13 +81,15 @@ async def sec_filings_to_embed_and_search(
     if not _is_filing_embedded(
         vector_store, request.ticker, request.year, request.filing_type
     ):
-        log.info(
-            f"Embedding SEC filing: {request.ticker=} {request.year=} {request.filing_type=}"
-        )
-        await sec_main_to_markdown_and_embed(
+        return _tool_error_response(
+            error="not_embedded",
+            message=(
+                "The requested SEC filing is not embedded for this ticker and year."
+            ),
             ticker=request.ticker,
             year=request.year,
-            filing_type=request.filing_type,
+            requested=str(request.filing_type),
+            vector_store=vector_store,
         )
 
     try:
@@ -80,7 +101,14 @@ async def sec_filings_to_embed_and_search(
             top_k=request.top_k,
         )
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+        return _tool_error_response(
+            error="search_failed",
+            message=str(exc),
+            ticker=request.ticker,
+            year=request.year,
+            requested=str(request.filing_type),
+            vector_store=vector_store,
+        )
 
     return _hits_to_chunk_dicts(hits)
 
@@ -88,32 +116,23 @@ async def sec_filings_to_embed_and_search(
 @app.post(EARNINGS_TRANSCRIPT_TOOL_ENDPOINT)
 async def earnings_transcript_to_embed_and_search(
     request: EarningsTranscriptRequest,
-) -> list[dict[str, Any]]:
+) -> list[dict[str, Any]] | dict[str, Any]:
     log.info(f"{request.ticker=} {request.year=} {request.quarter=} {request.query=}")
     vector_store = ChromaVectorStore()
 
     if not _is_filing_embedded(
         vector_store, request.ticker, request.year, request.quarter
     ):
-        log.info(
-            f"Fetching transcript: {request.ticker=} {request.year=} {request.quarter=}"
-        )
-        transcript = await get_transcript_for_quarter_async(
-            ticker=request.ticker,
-            year=int(request.year),
-            quarter=request.quarter,
-        )
-        if transcript is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Transcript not found: {request.ticker=} {request.year=} {request.quarter=}",
-            )
-
-        transcript_path = save_transcript_markdown(transcript)
-        vector_store.from_earnings_transcript_markdown(
+        return _tool_error_response(
+            error="not_embedded",
+            message=(
+                "The requested earnings transcript is not embedded for this ticker "
+                "and year."
+            ),
             ticker=request.ticker,
             year=request.year,
-            transcript_paths=[transcript_path],
+            requested=str(request.quarter),
+            vector_store=vector_store,
         )
 
     try:
@@ -125,6 +144,13 @@ async def earnings_transcript_to_embed_and_search(
             top_k=request.top_k,
         )
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+        return _tool_error_response(
+            error="search_failed",
+            message=str(exc),
+            ticker=request.ticker,
+            year=request.year,
+            requested=str(request.quarter),
+            vector_store=vector_store,
+        )
 
     return _hits_to_chunk_dicts(hits)

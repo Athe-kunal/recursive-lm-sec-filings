@@ -159,6 +159,34 @@ def _vector_chunks_to_string(chunks: list[dict[str, Any]]) -> str:
     return "".join(lines)
 
 
+def _is_tool_error_payload(obj: Any) -> bool:
+    """True if the JSON body is a structured tool error from the search server."""
+    return (
+        isinstance(obj, dict)
+        and isinstance(obj.get("error"), str)
+        and "message" in obj
+        and "available_filings" in obj
+    )
+
+
+def _tool_error_payload_to_text(payload: dict[str, Any]) -> str:
+    """Turn a tool-server error dict into text for the model."""
+    lines: list[str] = [str(payload.get("message", "Tool error"))]
+    available = payload.get("available_filings") or []
+    if available:
+        lines.append("Available embedded filings for this ticker and year:")
+        for item in available:
+            filing_type = item.get("filing_type", "")
+            filing_date = item.get("filing_date")
+            if filing_date:
+                lines.append(f"  - {filing_type} ({filing_date})")
+            else:
+                lines.append(f"  - {filing_type}")
+    else:
+        lines.append("No embedded filings for this ticker and year.")
+    return "\n".join(lines)
+
+
 @dataclass
 class SearchResult:
     """Structured search result and metadata payload."""
@@ -238,6 +266,18 @@ class SearchClient:
         if error_msg is not None:
             metadata["status"] = "api_error"
             return SearchResult(text=f"Search error: {error_msg}", metadata=metadata)
+
+        if api_response is None:
+            metadata["status"] = "empty_response"
+            return SearchResult(text="Empty API response.", metadata=metadata)
+
+        if isinstance(api_response, dict) and _is_tool_error_payload(api_response):
+            err_payload: dict[str, Any] = api_response
+            metadata["status"] = str(err_payload["error"])
+            return SearchResult(
+                text=_tool_error_payload_to_text(err_payload),
+                metadata=metadata,
+            )
 
         if isinstance(api_response, list) and api_response:
             metadata["status"] = "success"

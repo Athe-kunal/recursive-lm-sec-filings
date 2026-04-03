@@ -1,7 +1,10 @@
 import functools
+import logging
+import os
 import re
 import random
 from dataclasses import asdict, dataclass
+
 from datasets import (
     Dataset,
     Features,
@@ -10,8 +13,11 @@ from datasets import (
     concatenate_datasets,
     load_dataset,
 )
+from chromadb.api.models.Collection import Collection
+from finance_data.filings.utils import company_to_ticker
 import yfinance as yf
-import os
+
+logger = logging.getLogger(__name__)
 
 
 def get_company_name(ticker: str) -> str | None:
@@ -24,6 +30,12 @@ LOAD_FROM_CACHE_FILE: bool = os.getenv("LOAD_FROM_CACHE_FILE", "").lower() in {
     "true",
     "yes",
 }
+FILTER_UNSUPPORTED_TICKERS: bool = os.getenv(
+    "FILTER_UNSUPPORTED_TICKERS", ""
+).lower() in {"1", "true", "yes"}
+CHROMA_PATH = "chroma_db"
+CHROMA_COLLECTION = "sec_filings"
+CHROMA_GET_BATCH_SIZE = int(os.getenv("CHROMA_GET_BATCH_SIZE", "5000"))
 QUESTION_REPHRASER_RANDOM = random.Random(2026)
 MIN_SUPPORTED_YEAR = 2020
 
@@ -133,6 +145,120 @@ def is_year_supported(year: str) -> bool:
     return int(year) >= MIN_SUPPORTED_YEAR
 
 
+def normalize_ticker_value(raw_value: str | None) -> str:
+    if raw_value is None:
+        return ""
+    return raw_value.strip().upper()
+
+
+def resolve_to_ticker(raw_value: str | None) -> str:
+    if raw_value is None:
+        return ""
+    resolved_ticker = company_to_ticker(raw_value)
+    normalized_ticker = (resolved_ticker or "").strip().upper()
+    if normalized_ticker:
+        return normalized_ticker
+    return normalize_ticker_value(raw_value)
+
+
+def normalize_year(raw_year: str | int | float | None) -> str:
+    if raw_year is None:
+        return ""
+    if isinstance(raw_year, float):
+        if raw_year.is_integer():
+            return str(int(raw_year))
+        return str(raw_year).strip()
+    return str(raw_year).strip()
+
+
+def build_ticker_year_pair(ticker: str, year: str) -> tuple[str, str]:
+    return ticker, year
+
+
+def parse_ticker_year_from_metadata(metadata: dict) -> tuple[str, str] | None:
+    ticker = normalize_ticker_value(str(metadata.get("ticker", "")))
+    year = normalize_year(metadata.get("year"))
+    if not ticker or not year:
+        return None
+    return build_ticker_year_pair(ticker, year)
+
+
+@functools.lru_cache(maxsize=1)
+def load_available_ticker_year_pairs() -> set[tuple[str, str]]:
+    import chromadb
+
+    client = chromadb.PersistentClient(path=CHROMA_PATH)
+    collection = client.get_collection(name=CHROMA_COLLECTION)
+    metadatas = load_collection_metadatas_in_batches(
+        collection=collection,
+        batch_size=CHROMA_GET_BATCH_SIZE,
+    )
+    available_pairs: set[tuple[str, str]] = set()
+    for metadata in metadatas:
+        pair = parse_ticker_year_from_metadata(metadata)
+        if pair is None:
+            continue
+        available_pairs.add(pair)
+    logger.info(f"{len(available_pairs)=}")
+    return available_pairs
+
+
+def load_collection_metadatas_in_batches(
+    collection: Collection,
+    batch_size: int,
+) -> list[dict]:
+    total_count = collection.count()
+    logger.info(f"{total_count=}")
+    logger.info(f"{batch_size=}")
+    metadatas: list[dict] = []
+    for offset in range(0, total_count, batch_size):
+        batch_metadatas = get_metadata_batch(
+            collection=collection,
+            offset=offset,
+            limit=batch_size,
+        )
+        metadatas.extend(batch_metadatas)
+        logger.info(f"{offset=}")
+        logger.info(f"{len(batch_metadatas)=}")
+    logger.info(f"{len(metadatas)=}")
+    return metadatas
+
+
+def get_metadata_batch(collection: Collection, offset: int, limit: int) -> list[dict]:
+    results = collection.get(include=["metadatas"], limit=limit, offset=offset)
+    raw_metadatas = results.get("metadatas", [])
+    return [metadata for metadata in raw_metadatas if isinstance(metadata, dict)]
+
+
+def has_training_data_for_ticker_year(ticker_or_company_name: str, year: str) -> bool:
+    available_pairs = load_available_ticker_year_pairs()
+    normalized_ticker = resolve_to_ticker(ticker_or_company_name)
+    normalized_year = normalize_year(year)
+    pair = build_ticker_year_pair(normalized_ticker, normalized_year)
+    has_pair = pair in available_pairs
+    if not has_pair:
+        logger.info(f"{pair=}")
+    return has_pair
+
+
+def is_covered_qa_example_row(row: dict) -> bool:
+    return has_training_data_for_ticker_year(
+        ticker_or_company_name=row["ticker_or_company_name"],
+        year=row["year"],
+    )
+
+
+def maybe_filter_unsupported_ticker_rows(dataset: Dataset) -> Dataset:
+    if not FILTER_UNSUPPORTED_TICKERS:
+        logger.info(f"{FILTER_UNSUPPORTED_TICKERS=}")
+        return dataset
+    logger.info(f"{FILTER_UNSUPPORTED_TICKERS=}")
+    return dataset.filter(
+        is_covered_qa_example_row,
+        load_from_cache_file=LOAD_FROM_CACHE_FILE,
+    )
+
+
 def question_mentions_year(question: str, year: str) -> bool:
     return re.search(rf"\b{re.escape(year)}\b", question) is not None
 
@@ -199,7 +325,9 @@ def transform_financial_qa_row(row: dict) -> dict:
 
 def is_supported_financial_qa_row(row: dict) -> bool:
     year = extract_year_from_filing(row["filing"])
-    return is_year_supported(year)
+    if not is_year_supported(year):
+        return False
+    return has_training_data_for_ticker_year(row["ticker"], year)
 
 
 def load_financial_qa() -> Dataset:
@@ -238,7 +366,9 @@ def transform_financebench_row(row: dict) -> dict:
 
 def is_supported_financebench_row(row: dict) -> bool:
     year = extract_year_from_doc_period(row["doc_period"])
-    return is_year_supported(year)
+    if not is_year_supported(year):
+        return False
+    return has_training_data_for_ticker_year(row["company"], year)
 
 
 def load_financebench() -> Dataset:
@@ -255,7 +385,8 @@ def load_financebench() -> Dataset:
 
 
 def load_combined_qa() -> Dataset:
-    return concatenate_datasets([load_financial_qa(), load_financebench()])
+    combined_dataset = concatenate_datasets([load_financial_qa(), load_financebench()])
+    return maybe_filter_unsupported_ticker_rows(combined_dataset)
 
 
 INDEX_TO_FILING_TYPE: dict[str, str] = {
