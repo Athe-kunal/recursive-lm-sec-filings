@@ -1,0 +1,30 @@
+[
+  {
+    "dashes_acc_num": "000092706624000013",
+    "form_name": "10-K",
+    "filing_date": "2024-02-14",
+    "report_date": "2023-12-31",
+    "primary_document": "dva-20231231.htm"
+  },
+  {
+    "dashes_acc_num": "000092706623000209",
+    "form_name": "10-Q3",
+    "filing_date": "2023-11-07",
+    "report_date": "2023-09-30",
+    "primary_document": "dva-20230930.htm"
+  },
+  {
+    "dashes_acc_num": "000092706623000178",
+    "form_name": "10-Q2",
+    "filing_date": "2023-08-03",
+    "report_date": "2023-06-30",
+    "primary_document": "dva-20230630.htm"
+  },
+  {
+    "dashes_acc_num": "000092706623000104",
+    "form_name": "10-Q1",
+    "filing_date": "2023-05-08",
+    "report_date": "2023-03-31",
+    "primary_document": "dva-20230331.htm"
+  }
+]

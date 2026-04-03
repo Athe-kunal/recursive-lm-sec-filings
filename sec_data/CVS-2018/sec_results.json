@@ -1,0 +1,30 @@
+[
+  {
+    "dashes_acc_num": "000006480319000013",
+    "form_name": "10-K",
+    "filing_date": "2019-02-28",
+    "report_date": "2018-12-31",
+    "primary_document": "cvs-2018231x10k.htm"
+  },
+  {
+    "dashes_acc_num": "000155837018008642",
+    "form_name": "10-Q3",
+    "filing_date": "2018-11-06",
+    "report_date": "2018-09-30",
+    "primary_document": "cvs-20180930x10q.htm"
+  },
+  {
+    "dashes_acc_num": "000155837018006683",
+    "form_name": "10-Q2",
+    "filing_date": "2018-08-08",
+    "report_date": "2018-06-30",
+    "primary_document": "cvs-20180630x10q.htm"
+  },
+  {
+    "dashes_acc_num": "000155837018003777",
+    "form_name": "10-Q1",
+    "filing_date": "2018-05-02",
+    "report_date": "2018-03-31",
+    "primary_document": "cvs-20180331x10q.htm"
+  }
+]

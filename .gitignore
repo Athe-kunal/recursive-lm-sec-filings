@@ -206,16 +206,16 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-sec_data/
+# sec_data/
 
 output/
 
-localworkspace/
+# localworkspace/
 
 faiss_indexes/
 
 chroma_db/
 *.jsonl
-earnings_transcripts_data/
+# earnings_transcripts_data/
 
 notebooks/

@@ -1,0 +1,30 @@
+[
+  {
+    "dashes_acc_num": "000007747622000010",
+    "form_name": "10-K",
+    "filing_date": "2022-02-10",
+    "report_date": "2021-12-25",
+    "primary_document": "pep-20211225.htm"
+  },
+  {
+    "dashes_acc_num": "000007747621000050",
+    "form_name": "10-Q3",
+    "filing_date": "2021-10-05",
+    "report_date": "2021-09-04",
+    "primary_document": "pep-20210904.htm"
+  },
+  {
+    "dashes_acc_num": "000007747621000039",
+    "form_name": "10-Q2",
+    "filing_date": "2021-07-13",
+    "report_date": "2021-06-12",
+    "primary_document": "pep-20210612.htm"
+  },
+  {
+    "dashes_acc_num": "000007747621000018",
+    "form_name": "10-Q1",
+    "filing_date": "2021-04-15",
+    "report_date": "2021-03-20",
+    "primary_document": "pep-20210320.htm"
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "dashes_acc_num": "000020040622000086",
+    "form_name": "10-Q4",
+    "filing_date": "2022-10-27",
+    "report_date": "2022-10-02",
+    "primary_document": "jnj-20221002.htm"
+  },
+  {
+    "dashes_acc_num": "000020040622000071",
+    "form_name": "10-Q3",
+    "filing_date": "2022-07-29",
+    "report_date": "2022-07-03",
+    "primary_document": "jnj-20220703.htm"
+  },
+  {
+    "dashes_acc_num": "000020040622000048",
+    "form_name": "10-Q2",
+    "filing_date": "2022-04-29",
+    "report_date": "2022-04-03",
+    "primary_document": "jnj-20220403.htm"
+  },
+  {
+    "dashes_acc_num": "000020040622000022",
+    "form_name": "10-K",
+    "filing_date": "2022-02-17",
+    "report_date": "2022-01-02",
+    "primary_document": "jnj-20220102.htm"
+  }
+]

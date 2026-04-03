@@ -1,0 +1,30 @@
+[
+  {
+    "dashes_acc_num": "000002134422000009",
+    "form_name": "10-K",
+    "filing_date": "2022-02-22",
+    "report_date": "2021-12-31",
+    "primary_document": "ko-20211231.htm"
+  },
+  {
+    "dashes_acc_num": "000002134421000030",
+    "form_name": "10-Q4",
+    "filing_date": "2021-10-28",
+    "report_date": "2021-10-01",
+    "primary_document": "ko-20211001.htm"
+  },
+  {
+    "dashes_acc_num": "000002134421000024",
+    "form_name": "10-Q3",
+    "filing_date": "2021-07-26",
+    "report_date": "2021-07-02",
+    "primary_document": "ko-20210702.htm"
+  },
+  {
+    "dashes_acc_num": "000002134421000014",
+    "form_name": "10-Q2",
+    "filing_date": "2021-04-27",
+    "report_date": "2021-04-02",
+    "primary_document": "ko-20210402.htm"
+  }
+]

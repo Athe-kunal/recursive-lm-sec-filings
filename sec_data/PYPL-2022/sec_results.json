@@ -1,0 +1,30 @@
+[
+  {
+    "dashes_acc_num": "000163391723000033",
+    "form_name": "10-K",
+    "filing_date": "2023-02-10",
+    "report_date": "2022-12-31",
+    "primary_document": "pypl-20221231.htm"
+  },
+  {
+    "dashes_acc_num": "000163391722000167",
+    "form_name": "10-Q3",
+    "filing_date": "2022-11-04",
+    "report_date": "2022-09-30",
+    "primary_document": "pypl-20220930.htm"
+  },
+  {
+    "dashes_acc_num": "000163391722000137",
+    "form_name": "10-Q2",
+    "filing_date": "2022-08-03",
+    "report_date": "2022-06-30",
+    "primary_document": "pypl-20220630.htm"
+  },
+  {
+    "dashes_acc_num": "000163391722000088",
+    "form_name": "10-Q1",
+    "filing_date": "2022-04-28",
+    "report_date": "2022-03-31",
+    "primary_document": "pypl-20220331.htm"
+  }
+]

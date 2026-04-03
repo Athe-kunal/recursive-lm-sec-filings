@@ -1,0 +1,30 @@
+[
+  {
+    "dashes_acc_num": "000164559023000117",
+    "form_name": "10-K",
+    "filing_date": "2023-12-22",
+    "report_date": "2023-10-31",
+    "primary_document": "hpe-20231031.htm"
+  },
+  {
+    "dashes_acc_num": "000164559023000087",
+    "form_name": "10-Q3",
+    "filing_date": "2023-09-01",
+    "report_date": "2023-07-31",
+    "primary_document": "hpe-20230731.htm"
+  },
+  {
+    "dashes_acc_num": "000164559023000066",
+    "form_name": "10-Q2",
+    "filing_date": "2023-06-02",
+    "report_date": "2023-04-30",
+    "primary_document": "hpe-20230430.htm"
+  },
+  {
+    "dashes_acc_num": "000164559023000035",
+    "form_name": "10-Q1",
+    "filing_date": "2023-03-07",
+    "report_date": "2023-01-31",
+    "primary_document": "hpe-20230131.htm"
+  }
+]

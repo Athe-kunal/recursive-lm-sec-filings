@@ -1,0 +1,30 @@
+[
+  {
+    "dashes_acc_num": "000004711124000009",
+    "form_name": "10-K",
+    "filing_date": "2024-02-20",
+    "report_date": "2023-12-31",
+    "primary_document": "hsy-20231231.htm"
+  },
+  {
+    "dashes_acc_num": "000004711123000065",
+    "form_name": "10-Q4",
+    "filing_date": "2023-10-26",
+    "report_date": "2023-10-01",
+    "primary_document": "hsy-20231001.htm"
+  },
+  {
+    "dashes_acc_num": "000004711123000057",
+    "form_name": "10-Q3",
+    "filing_date": "2023-07-27",
+    "report_date": "2023-07-02",
+    "primary_document": "hsy-20230702.htm"
+  },
+  {
+    "dashes_acc_num": "000004711123000033",
+    "form_name": "10-Q2",
+    "filing_date": "2023-04-27",
+    "report_date": "2023-04-02",
+    "primary_document": "hsy-20230402.htm"
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "dashes_acc_num": "000173016823000096",
+    "form_name": "10-K",
+    "filing_date": "2023-12-14",
+    "report_date": "2023-10-29",
+    "primary_document": "avgo-20231029.htm"
+  },
+  {
+    "dashes_acc_num": "000173016823000077",
+    "form_name": "10-Q3",
+    "filing_date": "2023-09-06",
+    "report_date": "2023-07-30",
+    "primary_document": "avgo-20230730.htm"
+  },
+  {
+    "dashes_acc_num": "000173016823000064",
+    "form_name": "10-Q2",
+    "filing_date": "2023-06-07",
+    "report_date": "2023-04-30",
+    "primary_document": "avgo-20230430.htm"
+  },
+  {
+    "dashes_acc_num": "000173016823000008",
+    "form_name": "10-Q1",
+    "filing_date": "2023-03-08",
+    "report_date": "2023-01-29",
+    "primary_document": "avgo-20230129.htm"
+  }
+]

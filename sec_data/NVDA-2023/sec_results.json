@@ -1,0 +1,30 @@
+[
+  {
+    "dashes_acc_num": "000104581023000227",
+    "form_name": "10-Q4",
+    "filing_date": "2023-11-21",
+    "report_date": "2023-10-29",
+    "primary_document": "nvda-20231029.htm"
+  },
+  {
+    "dashes_acc_num": "000104581023000175",
+    "form_name": "10-Q3",
+    "filing_date": "2023-08-28",
+    "report_date": "2023-07-30",
+    "primary_document": "nvda-20230730.htm"
+  },
+  {
+    "dashes_acc_num": "000104581023000093",
+    "form_name": "10-Q2",
+    "filing_date": "2023-05-26",
+    "report_date": "2023-04-30",
+    "primary_document": "nvda-20230430.htm"
+  },
+  {
+    "dashes_acc_num": "000104581023000017",
+    "form_name": "10-K",
+    "filing_date": "2023-02-24",
+    "report_date": "2023-01-29",
+    "primary_document": "nvda-20230129.htm"
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "dashes_acc_num": "000155837023019393",
+    "form_name": "10-Q4",
+    "filing_date": "2023-11-30",
+    "report_date": "2023-10-28",
+    "primary_document": "ulta-20231028x10q.htm"
+  },
+  {
+    "dashes_acc_num": "000155837023015253",
+    "form_name": "10-Q3",
+    "filing_date": "2023-08-24",
+    "report_date": "2023-07-29",
+    "primary_document": "ulta-20230729x10q.htm"
+  },
+  {
+    "dashes_acc_num": "000155837023010464",
+    "form_name": "10-Q2",
+    "filing_date": "2023-05-25",
+    "report_date": "2023-04-29",
+    "primary_document": "ulta-20230429x10q.htm"
+  },
+  {
+    "dashes_acc_num": "000155837023004581",
+    "form_name": "10-K",
+    "filing_date": "2023-03-24",
+    "report_date": "2023-01-28",
+    "primary_document": "ulta-20230128x10k.htm"
+  }
+]
