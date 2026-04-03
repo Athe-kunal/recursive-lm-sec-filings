@@ -49,11 +49,21 @@ vllm-reranker-serve:
 start-server:
 	uv run uvicorn tool_server:app --host 0.0.0.0 --reload --port $(API_PORT)
 
-.PHONY: run-all
-run-all:
+.PHONY: run-ocr
+run-ocr:
 	nohup $(MAKE) vllm-olmocr-serve >> olmocr.log 2>&1 &
+
+.PHONY: run-embd
+run-embd:
 	nohup $(MAKE) vllm-embd-serve >> embd.log 2>&1 &
+
+.PHONY: run-server
+run-server:
 	nohup $(MAKE) start-server >> server.log 2>&1 &
+
+.PHONY: run-reranker
+run-reranker:
+	nohup $(MAKE) vllm-reranker-serve >> reranker.log 2>&1 &
 
 .PHONY: test
 test:
