@@ -78,9 +78,9 @@ RANKING_USER_CONTENT_PREFIX = (
     "  10-Q    — quarterly report (interim financials, quarter-over-quarter trends)\n"
     "  8-K     — current report (material events: earnings releases, M&A, leadership changes)\n"
     "  Earnings — earnings call transcript (management commentary, analyst Q&A)\n\n"
-    "Output the relevant document types inside <sources> and </sources> as a "
+    "Output the relevant document types inside <answer> and </answer> as a "
     "comma-separated list. Use only these values: DEF14A, 10-K, 10-Q, 8-K, Earnings.\n"
-    "For example, <sources> 10-K, Earnings </sources>.\n\nQuestion: "
+    "For example, <answer> 10-K, Earnings </answer>.\n\nQuestion: "
 )
 
 

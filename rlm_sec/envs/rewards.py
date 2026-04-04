@@ -24,7 +24,7 @@ _VALID_TOOL_GROUP_NAMES = frozenset(
 )
 
 _SEARCH_PATTERN = re.compile(r"<search>(.*?)</search>", re.DOTALL)
-_SOURCE_PATTERN = re.compile(r"<sources>(.*?)</sources>", re.DOTALL | re.IGNORECASE)
+_ANSWER_PATTERN = re.compile(r"<answer>(.*?)</answer>", re.DOTALL | re.IGNORECASE)
 _QA_ARGUMENT_MATCH_REWARD = 0.1
 
 
@@ -165,25 +165,25 @@ def extract_solution(solution_str):
     return matches[-1].group(1).strip()
 
 
-def extract_sources(solution_str: str) -> list[str]:
-    """Extract source labels from the last <sources> tag."""
-    matches = list(_SOURCE_PATTERN.finditer(solution_str))
+def extract_answer(solution_str: str) -> list[str]:
+    """Extract answer from the last <answer> tag."""
+    matches = list(_ANSWER_PATTERN.finditer(solution_str))
     if not matches:
         return []
 
-    raw_sources = matches[-1].group(1)
-    normalized_sources = []
-    for raw_source in raw_sources.split(","):
-        normalized = raw_source.strip()
+    raw_answer = matches[-1].group(1)
+    normalized_answer = []
+    for raw_answer in raw_answer.split(","):
+        normalized = raw_answer.strip()
         if normalized:
-            normalized_sources.append(normalized)
-    return normalized_sources
+            normalized_answer.append(normalized)
+    return normalized_answer
 
 
 def compute_precision_recall_f1(
     predicted: list[str], relevant: list[str]
 ) -> tuple[float, float, float]:
-    """Compute precision/recall/F1 over case-insensitive source sets."""
+    """Compute precision/recall/F1 over case-insensitive answer sets."""
     predicted_set = {value.upper() for value in predicted}
     relevant_set = {value.upper() for value in relevant}
 
@@ -345,22 +345,21 @@ def compute_ranking_score(
     format_score: float = 1.0,
     score: float = 1.0,
 ) -> RankingScoreResult:
-    """Score ranking by predicted sources and return source metrics.
+    """Score ranking by predicted answer and return answer metrics.
 
-    Correctness is F1 between the predicted sources and relevant sources.
-    Format reward is 1.0 when <sources> tags are present.
+    Correctness is F1 between the predicted answer and relevant answer.
+    Format reward is 1.0 when <answer> tags are present.
     """
     relevant: list[str] = ground_truth.get("relevant", [])
-    predicted_sources = extract_sources(solution_str)
-    has_source_tag = bool(predicted_sources)
-    format_reward = format_score if has_source_tag else 0.0
+    predicted_answer = extract_answer(solution_str)
+    has_answer_tag = bool(predicted_answer)
+    format_reward = format_score if has_answer_tag else 0.0
 
     if not relevant:
         return RankingScoreResult(
             correctness=0.0, format=format_reward, precision=0.0, recall=0.0, f1=0.0
         )
-
-    precision, recall, f1 = compute_precision_recall_f1(predicted_sources, relevant)
+    precision, recall, f1 = compute_precision_recall_f1(predicted_answer, relevant)
     correctness = score * f1
     return RankingScoreResult(
         correctness=correctness,
