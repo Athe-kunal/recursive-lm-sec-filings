@@ -266,7 +266,7 @@ def print_ranking_rewards(rewards: RankingEpisodeRewards) -> None:
 async def smoke_qa(client: OpenAI, model: str) -> None:
     """End-to-end QA smoke: OpenAI searches SEC filings then answers."""
     question = (
-        "In 2023, for Hasbro, Inc., what percentage of the company's "
+        "In 2023, for Apple, Inc., what percentage of the company's "
         "full-year revenues were earned in the second half of 2023?"
     )
     answer = (
@@ -301,7 +301,7 @@ async def smoke_qa(client: OpenAI, model: str) -> None:
 async def smoke_ranking(client: OpenAI, model: str) -> None:
     """End-to-end ranking smoke: OpenAI classifies relevant document types."""
     question = (
-        "What were Hasbro's key risk factors and full-year revenue "
+        "What were Apple Inc.'s key risk factors and full-year revenue "
         "breakdown in fiscal year 2023?"
     )
     relevant = ["10-K"]
