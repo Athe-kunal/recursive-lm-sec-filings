@@ -21,6 +21,7 @@ from rlm_sec.envs.finance_env import (
     reward_ranking_precision,
     reward_ranking_recall,
 )
+from rlm_sec.envs.tools import FINANCE_MAX_QA_TURNS, FINANCE_MAX_RANKING_TURNS
 
 
 @dataclass(frozen=True)
@@ -273,7 +274,7 @@ def build_smoke_dataset(ticker: str, year: str) -> Dataset:
         "ticker": ticker,
         "ticker_or_company_name": ticker,
         "ground_truth": {
-            "answer": ticker,
+            "target": ticker,
             "ticker": ticker,
             "year": year,
             "data_source": "sec_filings",
@@ -292,13 +293,17 @@ def build_env(tools: Any, ticker: str, year: str) -> FinanceSearchEnv:
     rubric.add_metric(reward_qa_ticker_match)
     rubric.add_metric(reward_qa_year_match)
 
-    config = SearchEnvConfig(max_turns=4)
+    config = SearchEnvConfig(
+        max_qa_turns=FINANCE_MAX_QA_TURNS,
+        max_ranking_turns=FINANCE_MAX_RANKING_TURNS,
+    )
     return FinanceSearchEnv(
         tools=tools,
         dataset=dataset,
         eval_dataset=dataset,
         rubric=rubric,
-        max_turns=config.max_turns,
+        max_qa_turns=config.max_qa_turns,
+        max_ranking_turns=config.max_ranking_turns,
     )
 
 
@@ -333,22 +338,51 @@ def build_chat_client(config: SmokeTestConfig) -> ChatClient:
         return DummyOpenAIClient()
 
 
-async def execute_env_search(env: FinanceSearchEnv, config: SmokeTestConfig) -> str:
-    """Run one search turn through FinanceSearchEnv and return information text."""
+async def execute_qa_two_turn_smoke(
+    env: FinanceSearchEnv, config: SmokeTestConfig
+) -> str:
+    """Run QA-style search then answer (two assistant steps), like a short rollout.
+
+    Turn 1: ``<search>`` → environment returns ``<information>``.
+    Turn 2: same transcript plus ``<answer>`` → env terminates (empty response,
+    ``final_env_response`` set). This matches ``max_qa_turns`` > 1; ranking uses
+    ``max_ranking_turns=1`` and would not use this search-then-answer pattern.
+    """
     search_action = (
         f"<search>SECFilingTool({config.retrieval_query}, {config.ticker}, "
         f"{config.year}, {config.filing_type})</search>"
     )
+    answer_action = f"<answer>{config.ticker}</answer>"
     logger.info(f"{search_action=}")
+    logger.info(f"{answer_action=}")
 
-    messages: vf.Messages = [{"role": "assistant", "content": search_action}]
     state: vf.State = {}
-    env_response = await env.env_response(messages=messages, state=state)
-    logger.info(f"{env_response=}")
+    turn1_messages: vf.Messages = [{"role": "assistant", "content": search_action}]
+    turn1_response = await env.env_response(messages=turn1_messages, state=state)
+    logger.info(f"{turn1_response=}")
 
-    if not env_response:
-        return "No environment response returned."
-    return env_response[0].get("content", "")
+    turn1_text = ""
+    if turn1_response:
+        turn1_text = str(turn1_response[0].get("content", "") or "")
+
+    turn2_messages: vf.Messages = [
+        {"role": "assistant", "content": search_action},
+        {"role": "user", "content": turn1_text or "\n<information>(empty)</information>\n"},
+        {"role": "assistant", "content": answer_action},
+    ]
+    turn2_response = await env.env_response(messages=turn2_messages, state=state)
+    logger.info(f"{turn2_response=}")
+    logger.info(f"{state.get('final_env_response')=}")
+
+    parts = [
+        f"--- Turn 1 (search) ---\n{turn1_text or '(no <information> payload)'}",
+        (
+            "--- Turn 2 (answer) ---\n"
+            f"env returned {len(turn2_response)} message(s); "
+            f"final_env_response set: {state.get('final_env_response') is not None}"
+        ),
+    ]
+    return "\n\n".join(parts)
 
 
 def parse_args() -> SmokeTestConfig:
@@ -393,10 +427,14 @@ def parse_args() -> SmokeTestConfig:
 async def run_smoke_test(config: SmokeTestConfig) -> str:
     """Run end-to-end smoke test and return model answer."""
     logger.info(f"{config=}")
+    logger.info(
+        f"{FINANCE_MAX_QA_TURNS=} {FINANCE_MAX_RANKING_TURNS=} "
+        "(QA smoke uses two steps: search then answer.)"
+    )
     tools = build_search_tools(search_mode=config.search_mode)
     env = build_env(tools=tools, ticker=config.ticker, year=config.year)
 
-    env_data = await execute_env_search(env=env, config=config)
+    env_data = await execute_qa_two_turn_smoke(env=env, config=config)
     logger.info(f"{env_data=}")
 
     context_data = f"User data: {config.data}\nEnvironment data: {env_data}"

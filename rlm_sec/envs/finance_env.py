@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import verifiers as vf
 from datasets import Dataset
@@ -18,7 +18,11 @@ from rlm_sec.envs.rewards import (
     compute_score,
     reward_action_format,
 )
-from rlm_sec.envs.tools import FinanceSearchTools
+from rlm_sec.envs.tools import (
+    FINANCE_MAX_QA_TURNS,
+    FINANCE_MAX_RANKING_TURNS,
+    FinanceSearchTools,
+)
 from settings import (
     EARNINGS_TRANSCRIPT_TOOL_ENDPOINT,
     SEC_FILING_TOOL_ENDPOINT,
@@ -50,7 +54,8 @@ class SearchEnvConfig:
     )
     topk: int = 3
     timeout: int = 30
-    max_turns: int = 4
+    max_qa_turns: int = FINANCE_MAX_QA_TURNS
+    max_ranking_turns: int = FINANCE_MAX_RANKING_TURNS
 
 
 @dataclass(frozen=True)
@@ -221,12 +226,42 @@ def _normalize_info(info: dict[str, Any] | None) -> dict[str, Any]:
     return info
 
 
+def _max_turns_for_task_type(task_type: str, max_qa_turns: int, max_ranking_turns: int) -> int:
+    """Return trajectory cap for this episode (assistant steps)."""
+    if task_type == "ranking":
+        return max_ranking_turns
+    return max_qa_turns
+
+
+def _rollout_task_type(state: vf.State) -> DataTaskType:
+    """Read DataTaskType from rollout info (defaults to qa)."""
+    info = state.get("info")
+    if isinstance(info, dict):
+        raw = info.get("task_type", "qa")
+        if raw in ("qa", "ranking"):
+            return cast(DataTaskType, raw)
+    return "qa"
+
+
 class FinanceSearchEnv(vf.MultiTurnEnv):
     """Custom Verifiers environment that preserves legacy `<search>` protocol."""
 
     def __init__(self, tools: FinanceSearchTools, **kwargs: Any):
+        max_qa_turns = int(kwargs.pop("max_qa_turns", FINANCE_MAX_QA_TURNS))
+        max_ranking_turns = int(kwargs.pop("max_ranking_turns", FINANCE_MAX_RANKING_TURNS))
+        kwargs.setdefault("max_turns", max(max_qa_turns, max_ranking_turns))
         super().__init__(**kwargs)
         self._tools = tools
+        self.max_qa_turns = max_qa_turns
+        self.max_ranking_turns = max_ranking_turns
+
+    @vf.stop
+    async def max_turns_reached(self, state: vf.State) -> bool:
+        """Stop when this episode's assistant-step budget is exhausted."""
+        limit = _max_turns_for_task_type(
+            _rollout_task_type(state), self.max_qa_turns, self.max_ranking_turns
+        )
+        return len(state["trajectory"]) >= limit and limit > 0
 
     async def env_response(self, messages: vf.Messages, state: vf.State) -> vf.Messages:
         """Execute search tools from the most recent assistant action."""
@@ -286,7 +321,7 @@ async def reward_format(completion: vf.Messages, info: dict[str, Any] | None) ->
     When the final assistant message contains <answer> tags the terminal format
     score is returned (0-1.3 for QA with ground-truth matches, 0-1 for ranking).
     Otherwise the intermediate action-format score for the last search call is
-    returned as a fallback (rollout ended at max_turns without an answer).
+    returned as a fallback (rollout ended at max_qa_turns or max_ranking_turns without an answer).
     """
     normalized_info = _normalize_info(info)
     completion_text = _completion_to_text(completion)
@@ -394,5 +429,6 @@ def create_finance_env(
         dataset=dataset,
         eval_dataset=eval_dataset,
         rubric=rubric,
-        max_turns=config.max_turns,
+        max_qa_turns=config.max_qa_turns,
+        max_ranking_turns=config.max_ranking_turns,
     )

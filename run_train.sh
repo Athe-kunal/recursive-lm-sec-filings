@@ -18,8 +18,8 @@ CONFIG_PATH="${SCRIPT_DIR}/rl.toml"
 : "${RLM_SEC_EVAL_DATA:=data/validation.parquet}"
 : "${RLM_SEC_TOPK:=3}"
 : "${RLM_SEC_TIMEOUT:=30}"
-: "${RLM_SEC_MAX_TURNS:=4}"
-
+: "${RLM_SEC_MAX_QA_TURNS:=4}"
+: "${RLM_SEC_MAX_RANKING_TURNS:=1}"
 : "${WANDB_PROJECT:=sec-filings-rl}"
 : "${WANDB_NAME:=sec-filings-lora}"
 
@@ -39,7 +39,8 @@ export RLM_SEC_TRAIN_DATA
 export RLM_SEC_EVAL_DATA
 export RLM_SEC_TOPK
 export RLM_SEC_TIMEOUT
-export RLM_SEC_MAX_TURNS
+export RLM_SEC_MAX_QA_TURNS
+export RLM_SEC_MAX_RANKING_TURNS
 
 export WANDB_PROJECT
 export WANDB_NAME
