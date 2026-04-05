@@ -42,7 +42,8 @@ Set these optional variables before launching:
 - `RLM_SEC_EVAL_DATA` (default: `/workspace/recursive-lm-sec-filings/data/validation.parquet`)
 - `RLM_SEC_TOPK` (default: `3`)
 - `RLM_SEC_TIMEOUT` (default: `30`)
-- `RLM_SEC_MAX_TURNS` (default: `4`)
+- `RLM_SEC_MAX_QA_TURNS` (default: `4`)
+- `RLM_SEC_MAX_RANKING_TURNS` (default: `1`)
 
 ## Environment protocol
 

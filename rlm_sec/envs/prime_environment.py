@@ -26,7 +26,8 @@ def _build_search_env_config() -> SearchEnvConfig:
         log_requests=os.getenv("RLM_SEC_LOG_REQUESTS", "false").lower() == "true",
         topk=int(os.getenv("RLM_SEC_TOPK", "3")),
         timeout=int(os.getenv("RLM_SEC_TIMEOUT", "30")),
-        max_turns=int(os.getenv("RLM_SEC_MAX_TURNS", "4")),
+        max_qa_turns=int(os.getenv("RLM_SEC_MAX_QA_TURNS", "4")),
+        max_ranking_turns=int(os.getenv("RLM_SEC_MAX_RANKING_TURNS", "1")),
     )
 
 
