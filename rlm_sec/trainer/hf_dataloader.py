@@ -1,4 +1,5 @@
 import functools
+import hashlib
 import logging
 import os
 import re
@@ -81,6 +82,21 @@ RANKING_USER_CONTENT_PREFIX = (
     "Output the relevant document types inside <answer> and </answer> as a "
     "comma-separated list. Use only these values: DEF14A, 10-K, 10-Q, 8-K, Earnings.\n"
     "For example, <answer> 10-K, Earnings </answer>.\n\nQuestion: "
+)
+
+
+def build_prompt_cache_token(*prompt_parts: str) -> str:
+    prompt_text = "".join(prompt_parts)
+    return hashlib.sha256(prompt_text.encode("utf-8")).hexdigest()[:12]
+
+
+QA_PROMPT_CACHE_TOKEN = build_prompt_cache_token(
+    DEFAULT_SYSTEM_CONTENT,
+    DEFAULT_USER_CONTENT_PREFIX,
+)
+RANKING_PROMPT_CACHE_TOKEN = build_prompt_cache_token(
+    DEFAULT_SYSTEM_CONTENT,
+    RANKING_USER_CONTENT_PREFIX,
 )
 
 
@@ -175,6 +191,15 @@ def build_ticker_year_pair(ticker: str, year: str) -> tuple[str, str]:
     return ticker, year
 
 
+def build_dataset_map_fingerprint(
+    dataset: Dataset,
+    transform_name: str,
+    cache_token: str,
+) -> str:
+    dataset_fingerprint = getattr(dataset, "_fingerprint", "unknown")
+    return f"{dataset_fingerprint}-{transform_name}-{cache_token}"
+
+
 def parse_ticker_year_from_metadata(metadata: dict) -> tuple[str, str] | None:
     ticker = normalize_ticker_value(str(metadata.get("ticker", "")))
     year = normalize_year(metadata.get("year"))
@@ -227,6 +252,8 @@ def load_collection_metadatas_in_batches(
 def get_metadata_batch(collection: Collection, offset: int, limit: int) -> list[dict]:
     results = collection.get(include=["metadatas"], limit=limit, offset=offset)
     raw_metadatas = results.get("metadatas", [])
+    if raw_metadatas is None:
+        return []
     return [metadata for metadata in raw_metadatas if isinstance(metadata, dict)]
 
 
@@ -335,11 +362,17 @@ def load_financial_qa() -> Dataset:
     filtered_ds = ds.filter(
         is_supported_financial_qa_row, load_from_cache_file=LOAD_FROM_CACHE_FILE
     )
+    prompt_fingerprint = build_dataset_map_fingerprint(
+        dataset=filtered_ds,
+        transform_name="financial_qa_prompt",
+        cache_token=QA_PROMPT_CACHE_TOKEN,
+    )
     return filtered_ds.map(
         transform_financial_qa_row,
         remove_columns=filtered_ds.column_names,
         features=QA_FEATURES,
         load_from_cache_file=LOAD_FROM_CACHE_FILE,
+        new_fingerprint=prompt_fingerprint,
     )
 
 
@@ -376,11 +409,17 @@ def load_financebench() -> Dataset:
     filtered_ds = ds.filter(
         is_supported_financebench_row, load_from_cache_file=LOAD_FROM_CACHE_FILE
     )
+    prompt_fingerprint = build_dataset_map_fingerprint(
+        dataset=filtered_ds,
+        transform_name="financebench_prompt",
+        cache_token=QA_PROMPT_CACHE_TOKEN,
+    )
     return filtered_ds.map(
         transform_financebench_row,
         remove_columns=filtered_ds.column_names,
         features=QA_FEATURES,
         load_from_cache_file=LOAD_FROM_CACHE_FILE,
+        new_fingerprint=prompt_fingerprint,
     )
 
 
@@ -440,11 +479,18 @@ def parse_qrel(qrel: dict[str, int]) -> tuple[list[str], list[str]]:
 
 def load_finance_agent_bench(file_path: str) -> Dataset:
     ds = load_dataset("json", data_files=file_path, split="train")
+    prompt_fingerprint = build_dataset_map_fingerprint(
+        dataset=ds,
+        transform_name="finance_agent_bench_prompt",
+        cache_token=RANKING_PROMPT_CACHE_TOKEN,
+    )
 
     return ds.map(
         transform_finance_agent_bench_row,
         remove_columns=ds.column_names,
         features=DOCUMENT_RANKING_FEATURES,
+        load_from_cache_file=LOAD_FROM_CACHE_FILE,
+        new_fingerprint=prompt_fingerprint,
     )
 
 

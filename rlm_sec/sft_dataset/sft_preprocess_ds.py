@@ -89,7 +89,8 @@ async def build_train_dataset_with_rollouts_async(
     seed: int = 42,
     train_qa_n: int = _DEFAULT_TRAIN_QA_N,
     train_ranking_n: int = _DEFAULT_TRAIN_RANKING_N,
-    temperature: float = 0.0,
+    rollout_temperature: float = 1.0,
+    continuation_temperature: float = 0.7,
     n: int = 1,
     smoke_test: bool = False,
 ) -> RolloutSummary:
@@ -111,7 +112,8 @@ async def build_train_dataset_with_rollouts_async(
         dataset=dataset_for_rollout,
         output_jsonl_path=rollout_output_jsonl_path,
         model=model,
-        temperature=temperature,
+        rollout_temperature=rollout_temperature,
+        continuation_temperature=continuation_temperature,
         n=n,
     )
 
@@ -125,9 +127,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--train_qa_n", type=int, default=_DEFAULT_TRAIN_QA_N)
     parser.add_argument("--train_ranking_n", type=int, default=_DEFAULT_TRAIN_RANKING_N)
-    parser.add_argument("--rollout_output_jsonl_path", default="sft_data.jsonl")
+    parser.add_argument("--rollout_output_jsonl_path", default="sft_data_n3.jsonl")
     parser.add_argument("--model", default="gpt-4o-mini")
-    parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--rollout_temperature", type=float, default=1.0)
+    parser.add_argument("--continuation_temperature", type=float, default=0.7)
     parser.add_argument("--n", type=int, default=1)
     parser.add_argument("--smoke-test", action="store_true", default=False)
     return parser.parse_args()
@@ -157,7 +160,8 @@ def main() -> None:
             seed=args.seed,
             train_qa_n=args.train_qa_n,
             train_ranking_n=args.train_ranking_n,
-            temperature=args.temperature,
+            rollout_temperature=args.rollout_temperature,
+            continuation_temperature=args.continuation_temperature,
             n=args.n,
             smoke_test=args.smoke_test,
         )

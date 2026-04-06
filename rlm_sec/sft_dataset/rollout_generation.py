@@ -24,8 +24,7 @@ _RANKING_TASK = "ranking"
 _JSONL_ENCODING = "utf-8"
 _ROLLOUT_CONCURRENCY = 8
 
-_METADATA_FIELDS = (
-    "answer",
+_COMMON_METADATA_FIELDS = (
     "context",
     "year",
     "ticker_or_company_name",
@@ -33,14 +32,22 @@ _METADATA_FIELDS = (
     "data_source",
     "task_type",
 )
+_QA_METADATA_FIELDS = ("answer",)
+_RANKING_METADATA_FIELDS = ("relevant", "not_relevant")
 
 
 class RolloutRecord(NamedTuple):
     """Represents one generated rollout row persisted to JSONL."""
 
     rollout_key: str
-    candidate_index: int
     metadata: dict[str, Any]
+    prompt_messages: list[dict[str, str]]
+    choices: list["RolloutChoice"]
+
+
+class RolloutChoice(NamedTuple):
+    """Represents one sampled rollout: the full conversation including prompt."""
+
     conversation: list[dict[str, str]]
 
 
@@ -56,11 +63,10 @@ class RolloutSummary(NamedTuple):
 class PendingRollout(NamedTuple):
     """Represents one dataset row that still needs a generated rollout."""
 
-    index: int
+    row_index: int
+    rollout_key: str
     metadata: dict[str, Any]
     prompt_messages: list[dict[str, str]]
-    missing_candidate_indices: list[int]
-    rollout_keys_by_candidate: dict[int, str]
 
 
 def _cast_prompt_messages(prompt: Any) -> list[dict[str, str]]:
@@ -69,9 +75,17 @@ def _cast_prompt_messages(prompt: Any) -> list[dict[str, str]]:
 
 
 def _build_metadata(example: dict[str, Any]) -> dict[str, Any]:
-    """Builds rollout metadata from the canonical SFT metadata fields."""
+    """Builds rollout metadata from common and task-specific SFT fields."""
     metadata: dict[str, Any] = {}
-    for field in _METADATA_FIELDS:
+    for field in _COMMON_METADATA_FIELDS:
+        metadata[field] = example.get(field)
+
+    task_type = str(example.get("task_type", _QA_TASK)).strip()
+    task_specific_fields = _QA_METADATA_FIELDS
+    if task_type == _RANKING_TASK:
+        task_specific_fields = _RANKING_METADATA_FIELDS
+
+    for field in task_specific_fields:
         metadata[field] = example.get(field)
     return metadata
 
@@ -80,65 +94,148 @@ def _compute_rollout_key(
     metadata: dict[str, Any],
     prompt_messages: list[dict[str, str]],
     model: str,
-    candidate_index: int,
 ) -> str:
     """Computes a stable unique key used for JSONL caching."""
     payload = {
         "metadata": metadata,
         "model": model,
         "prompt": prompt_messages,
-        "candidate_index": candidate_index,
     }
     serialized_payload = json.dumps(payload, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(serialized_payload.encode(_JSONL_ENCODING)).hexdigest()
 
 
-def _load_cached_rollouts(jsonl_path: str) -> dict[str, dict[str, Any]]:
-    """Loads existing rollout records keyed by rollout_key from JSONL."""
+def _split_prompt_and_completion(
+    conversation: list[dict[str, str]],
+) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    """Splits a full conversation into shared prompt and sampled completion."""
+    for message_index, message in enumerate(conversation):
+        if message.get("role") == "assistant":
+            return conversation[:message_index], conversation[message_index:]
+    return conversation, []
+
+
+def _load_cached_rollouts(jsonl_path: str, model: str) -> dict[str, RolloutRecord]:
+    """Loads existing rollout records keyed by rollout_key from JSONL.
+
+    Handles three historical formats:
+    - New format: ``choices[].conversation`` holds the full conversation.
+    - Old format: ``choices[].completion`` holds only assistant turns; merged with
+      the top-level ``prompt`` to reconstruct the full conversation.
+    - Legacy format: individual lines with ``conversation`` and ``candidate_index``;
+      grouped by recomputed key.
+    """
     path = Path(jsonl_path)
     if not path.exists():
         logger.info(f"cache file missing, starting fresh. {jsonl_path=}")
         return {}
 
-    cached: dict[str, dict[str, Any]] = {}
+    cached: dict[str, RolloutRecord] = {}
+    legacy_choices_by_key: dict[str, list[tuple[int, RolloutChoice]]] = {}
+    legacy_metadata_by_key: dict[str, dict[str, Any]] = {}
+    legacy_prompt_by_key: dict[str, list[dict[str, str]]] = {}
+
     with path.open("r", encoding=_JSONL_ENCODING) as file_obj:
         for line_number, raw_line in enumerate(file_obj, start=1):
             stripped_line = raw_line.strip()
             if not stripped_line:
                 continue
             data = json.loads(stripped_line)
-            rollout_key = data.get("rollout_key", "")
+
+            if "choices" in data:
+                rollout_key = str(data.get("rollout_key", ""))
+                if not rollout_key:
+                    logger.warning(
+                        "ignoring cached line with missing rollout_key. "
+                        f"{jsonl_path=} {line_number=}"
+                    )
+                    continue
+
+                prompt = _cast_prompt_messages(data.get("prompt", []))
+                serialized_choices = cast(list[dict[str, Any]], data.get("choices", []))
+                choices: list[RolloutChoice] = []
+                for choice_data in serialized_choices:
+                    if "conversation" in choice_data:
+                        conversation = _cast_prompt_messages(
+                            choice_data["conversation"]
+                        )
+                    else:
+                        completion = _cast_prompt_messages(
+                            choice_data.get("completion", [])
+                        )
+                        conversation = prompt + completion
+                    choices.append(RolloutChoice(conversation=conversation))
+
+                cached[rollout_key] = RolloutRecord(
+                    rollout_key=rollout_key,
+                    metadata=cast(dict[str, Any], data.get("metadata", {})),
+                    prompt_messages=prompt,
+                    choices=choices,
+                )
+                continue
+
+            rollout_key = str(data.get("rollout_key", ""))
             if not rollout_key:
                 logger.warning(
                     "ignoring cached line with missing rollout_key. "
                     f"{jsonl_path=} {line_number=}"
                 )
                 continue
-            cached[str(rollout_key)] = data
+
+            metadata = cast(dict[str, Any], data.get("metadata", {}))
+            conversation = _cast_prompt_messages(data.get("conversation", []))
+            prompt_messages, _ = _split_prompt_and_completion(conversation)
+            normalized_rollout_key = _compute_rollout_key(
+                metadata=metadata,
+                prompt_messages=prompt_messages,
+                model=model,
+            )
+            candidate_index = int(data.get("candidate_index", 0))
+            legacy_metadata_by_key[normalized_rollout_key] = metadata
+            legacy_prompt_by_key[normalized_rollout_key] = prompt_messages
+            legacy_choices_by_key.setdefault(normalized_rollout_key, []).append(
+                (candidate_index, RolloutChoice(conversation=conversation))
+            )
+
+    for rollout_key, indexed_choices in legacy_choices_by_key.items():
+        if rollout_key in cached:
+            continue
+
+        sorted_choices = [
+            choice for _, choice in sorted(indexed_choices, key=lambda item: item[0])
+        ]
+        cached[rollout_key] = RolloutRecord(
+            rollout_key=rollout_key,
+            metadata=legacy_metadata_by_key[rollout_key],
+            prompt_messages=legacy_prompt_by_key[rollout_key],
+            choices=sorted_choices,
+        )
 
     logger.info(f"loaded cached rollouts. {jsonl_path=} {len(cached)=}")
     return cached
 
 
-def _append_rollout_records_sync(jsonl_path: str, records: list[RolloutRecord]) -> None:
-    """Synchronously appends multiple rollout records to JSONL."""
+def _write_rollout_records_sync(jsonl_path: str, records: list[RolloutRecord]) -> None:
+    """Synchronously rewrites rollout JSONL with one record per dataset row."""
     Path(jsonl_path).parent.mkdir(parents=True, exist_ok=True)
-    with open(jsonl_path, "a", encoding=_JSONL_ENCODING) as file_obj:
+    with open(jsonl_path, "w", encoding=_JSONL_ENCODING) as file_obj:
         for record in records:
             serialized_record = {
                 "rollout_key": record.rollout_key,
-                "candidate_index": record.candidate_index,
                 "metadata": record.metadata,
-                "conversation": record.conversation,
+                "prompt": record.prompt_messages,
+                "choices": [
+                    {"conversation": choice.conversation} for choice in record.choices
+                ],
             }
             file_obj.write(json.dumps(serialized_record, ensure_ascii=False) + "\n")
 
 
-async def _append_rollout_records_async(
+async def _write_rollout_records_async(
     jsonl_path: str, records: list[RolloutRecord]
 ) -> None:
-    """Asynchronously appends multiple rollout records to JSONL."""
-    await asyncio.to_thread(_append_rollout_records_sync, jsonl_path, records)
+    """Asynchronously rewrites rollout JSONL with merged rollout records."""
+    await asyncio.to_thread(_write_rollout_records_sync, jsonl_path, records)
 
 
 def _build_openai_client() -> AsyncOpenAI:
@@ -175,39 +272,26 @@ async def _generate_assistant_responses(
     async with semaphore:
         response = await client.chat.completions.create(
             model=model,
-            messages=messages,
+            messages=cast(Any, messages),
             temperature=temperature,
             n=n,
         )
     contents = _extract_response_contents(response)
-    logger.info(
-        f"assistant responses generated. {model=} {n=} "
-        f"{len(contents)=}"
-    )
+    logger.info(f"assistant responses generated. {model=} {n=} " f"{len(contents)=}")
     return contents
 
 
 def _build_rollout_record(
     pending_rollout: PendingRollout,
-    candidate_index: int,
-    conversation: list[dict[str, str]],
+    choices: list[RolloutChoice],
 ) -> RolloutRecord:
-    """Builds rollout record with full conversation and metadata."""
+    """Builds rollout record with shared prompt and sampled choices."""
     return RolloutRecord(
-        rollout_key=pending_rollout.rollout_keys_by_candidate[candidate_index],
-        candidate_index=candidate_index,
+        rollout_key=pending_rollout.rollout_key,
         metadata=pending_rollout.metadata,
-        conversation=conversation,
+        prompt_messages=pending_rollout.prompt_messages,
+        choices=choices,
     )
-
-
-def _build_single_turn_conversation(
-    prompt_messages: list[dict[str, str]], assistant_content: str
-) -> list[dict[str, str]]:
-    """Builds a single-turn conversation from prompt plus assistant response."""
-    conversation = list(prompt_messages)
-    conversation.append({"role": "assistant", "content": assistant_content})
-    return conversation
 
 
 async def _run_qa_multiturn(
@@ -216,10 +300,10 @@ async def _run_qa_multiturn(
     initial_assistant_content: str,
     client: AsyncOpenAI,
     model: str,
-    temperature: float,
+    continuation_temperature: float,
     semaphore: asyncio.Semaphore,
 ) -> list[dict[str, str]]:
-    """Runs QA multi-turn rollout with env <information> feedback."""
+    """Runs QA multi-turn rollout and returns the full conversation."""
     messages: list[dict[str, str]] = list(prompt_messages)
     state: vf.State = cast(vf.State, {})
 
@@ -233,7 +317,7 @@ async def _run_qa_multiturn(
                 client=client,
                 model=model,
                 messages=messages,
-                temperature=temperature,
+                temperature=continuation_temperature,
                 semaphore=semaphore,
                 n=1,
             )
@@ -259,9 +343,8 @@ async def _run_qa_multiturn(
 
 def _build_pending_rollouts(
     dataset: Dataset,
-    cached_rollouts: dict[str, dict[str, Any]],
+    cached_rollouts: dict[str, RolloutRecord],
     model: str,
-    n: int,
 ) -> tuple[list[PendingRollout], int]:
     """Builds pending rollout jobs and counts how many were cache hits."""
     pending_rollouts: list[PendingRollout] = []
@@ -271,34 +354,24 @@ def _build_pending_rollouts(
         example_dict = cast(dict[str, Any], example)
         prompt_messages = _cast_prompt_messages(example_dict.get("prompt", []))
         metadata = _build_metadata(example_dict)
-        missing_candidate_indices: list[int] = []
-        rollout_keys_by_candidate: dict[int, str] = {}
-        for candidate_index in range(n):
-            rollout_key = _compute_rollout_key(
+        rollout_key = _compute_rollout_key(
+            metadata=metadata,
+            prompt_messages=prompt_messages,
+            model=model,
+        )
+        if rollout_key in cached_rollouts:
+            logger.info(f"reusing cached rollout. {index=} {rollout_key=}")
+            reused_count += 1
+            continue
+
+        pending_rollouts.append(
+            PendingRollout(
+                row_index=index,
+                rollout_key=rollout_key,
                 metadata=metadata,
                 prompt_messages=prompt_messages,
-                model=model,
-                candidate_index=candidate_index,
             )
-            rollout_keys_by_candidate[candidate_index] = rollout_key
-            if rollout_key in cached_rollouts:
-                reused_count += 1
-                logger.info(
-                    f"reusing cached rollout. {index=} {candidate_index=} {rollout_key=}"
-                )
-                continue
-            missing_candidate_indices.append(candidate_index)
-
-        if missing_candidate_indices:
-            pending_rollouts.append(
-                PendingRollout(
-                    index=index,
-                    metadata=metadata,
-                    prompt_messages=prompt_messages,
-                    missing_candidate_indices=missing_candidate_indices,
-                    rollout_keys_by_candidate=rollout_keys_by_candidate,
-                )
-            )
+        )
 
     logger.info(f"prepared pending rollouts. {len(pending_rollouts)=} {reused_count=}")
     return pending_rollouts, reused_count
@@ -310,46 +383,38 @@ def _is_qa_rollout(metadata: dict[str, Any]) -> bool:
     return task_type == _QA_TASK
 
 
-async def _generate_rollout_records(
+async def _generate_rollout_record(
     env: FinanceSearchEnv,
     client: AsyncOpenAI,
     model: str,
     pending_rollout: PendingRollout,
-    temperature: float,
+    rollout_temperature: float,
+    continuation_temperature: float,
     semaphore: asyncio.Semaphore,
-) -> list[RolloutRecord]:
-    """Generates one or more rollout candidates for a single dataset row."""
-    candidate_count = len(pending_rollout.missing_candidate_indices)
+    n: int,
+) -> tuple[RolloutRecord, int]:
+    """Generates n rollout choices for a single dataset row.
+
+    Uses ``rollout_temperature`` for the initial diverse candidate sampling and
+    ``continuation_temperature`` for subsequent reasoning turns in QA multi-turn.
+    """
     initial_assistant_responses = await _generate_assistant_responses(
         client=client,
         model=model,
         messages=pending_rollout.prompt_messages,
-        temperature=temperature,
+        temperature=rollout_temperature,
         semaphore=semaphore,
-        n=candidate_count,
+        n=n,
     )
     logger.info(
-        f"initial responses prepared. {pending_rollout.index=} "
-        f"{candidate_count=} {len(initial_assistant_responses)=}"
+        f"initial responses prepared. {pending_rollout.row_index=} "
+        f"{n=} {len(initial_assistant_responses)=}"
     )
 
-    records: list[RolloutRecord] = []
-    for choice_index, candidate_index in enumerate(
-        pending_rollout.missing_candidate_indices
+    choices: list[RolloutChoice] = []
+    for choice_index, initial_assistant_content in enumerate(
+        initial_assistant_responses
     ):
-        if choice_index >= len(initial_assistant_responses):
-            logger.warning(
-                "response choices shorter than candidate count. "
-                f"{choice_index=} {candidate_index=} "
-                f"{len(initial_assistant_responses)=}"
-            )
-            break
-
-        initial_assistant_content = initial_assistant_responses[choice_index]
-        conversation = _build_single_turn_conversation(
-            prompt_messages=pending_rollout.prompt_messages,
-            assistant_content=initial_assistant_content,
-        )
         if _is_qa_rollout(pending_rollout.metadata):
             conversation = await _run_qa_multiturn(
                 env=env,
@@ -357,77 +422,84 @@ async def _generate_rollout_records(
                 initial_assistant_content=initial_assistant_content,
                 client=client,
                 model=model,
-                temperature=temperature,
+                continuation_temperature=continuation_temperature,
                 semaphore=semaphore,
             )
-        record = _build_rollout_record(
-            pending_rollout=pending_rollout,
-            candidate_index=candidate_index,
-            conversation=conversation,
-        )
-        records.append(record)
+        else:
+            conversation = list(pending_rollout.prompt_messages) + [
+                {"role": "assistant", "content": initial_assistant_content}
+            ]
+
+        choices.append(RolloutChoice(conversation=conversation))
         logger.info(
             "generated rollout candidate. "
-            f"{pending_rollout.index=} {candidate_index=} {record.rollout_key=}"
+            f"{pending_rollout.row_index=} {choice_index=} {pending_rollout.rollout_key=}"
         )
-    return records
+
+    record = _build_rollout_record(pending_rollout=pending_rollout, choices=choices)
+    return record, len(choices)
 
 
 async def generate_and_cache_rollouts_async(
     dataset: Dataset,
     output_jsonl_path: str,
     model: str,
-    temperature: float = 0.0,
+    rollout_temperature: float = 1.0,
+    continuation_temperature: float = 0.7,
     n: int = 1,
 ) -> RolloutSummary:
     """Generates rollouts for each row and persists cached JSONL records.
 
-    Uses ``OPENAI_API_KEY`` (required) and ``OPENAI_BASE_URL`` (optional; default
-    OpenAI endpoint when unset or empty) for the HTTP client.
+    ``rollout_temperature`` controls diversity across the ``n`` initial candidates
+    sampled per prompt. ``continuation_temperature`` controls reasoning steps in
+    subsequent QA multi-turn turns. Uses ``OPENAI_API_KEY`` (required) and
+    ``OPENAI_BASE_URL`` (optional) for the HTTP client.
     """
     if n < 1:
         raise ValueError(f"n must be at least 1. {n=}")
 
     client = _build_openai_client()
     env = create_finance_env(dataset=dataset)
-    cached_rollouts = _load_cached_rollouts(output_jsonl_path)
+    cached_rollouts = _load_cached_rollouts(output_jsonl_path, model=model)
     pending_rollouts, reused_count = _build_pending_rollouts(
         dataset=dataset,
         cached_rollouts=cached_rollouts,
         model=model,
-        n=n,
     )
 
     semaphore = asyncio.Semaphore(_ROLLOUT_CONCURRENCY)
     tasks = [
-        _generate_rollout_records(
+        _generate_rollout_record(
             env=env,
             client=client,
             model=model,
             pending_rollout=pending_rollout,
-            temperature=temperature,
+            rollout_temperature=rollout_temperature,
+            continuation_temperature=continuation_temperature,
             semaphore=semaphore,
+            n=n,
         )
         for pending_rollout in pending_rollouts
     ]
-    generated_nested_records = await asyncio.gather(*tasks)
-    generated_records = [
-        record
-        for generated_row in generated_nested_records
-        for record in generated_row
-    ]
+    generated_results = await asyncio.gather(*tasks)
+    generated_records: list[RolloutRecord] = []
+    generated_count = 0
+    for record, new_choice_count in generated_results:
+        cached_rollouts[record.rollout_key] = record
+        generated_records.append(record)
+        generated_count += new_choice_count
 
     if generated_records:
-        await _append_rollout_records_async(
+        await _write_rollout_records_async(
             jsonl_path=output_jsonl_path,
-            records=generated_records,
+            records=list(cached_rollouts.values()),
         )
 
-    generated_count = len(generated_records)
     total_count = len(dataset)
     logger.info(
         f"rollout generation complete. {output_jsonl_path=} {generated_count=} "
-        f"{reused_count=} {total_count=} {_ROLLOUT_CONCURRENCY=} {n=}"
+        f"{reused_count=} {total_count=} {_ROLLOUT_CONCURRENCY=} {n=} "
+        f"{rollout_temperature=} {continuation_temperature=}"
     )
     return RolloutSummary(
         output_path=output_jsonl_path,
