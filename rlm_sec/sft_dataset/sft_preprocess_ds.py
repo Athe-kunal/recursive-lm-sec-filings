@@ -1,8 +1,18 @@
-"""Load and subsample SFT parquet splits for supervised fine-tuning."""
+"""Load/subsample SFT parquet data and optionally generate cached rollouts."""
 
+from __future__ import annotations
+
+import argparse
+import asyncio
 import logging
 
 from datasets import Dataset, concatenate_datasets, load_dataset
+
+from rlm_sec.sft_dataset.rollout_generation import (
+    RolloutSummary,
+    build_smoke_dataset,
+    generate_and_cache_rollouts_async,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +37,10 @@ def load_sft_dataset(
     train_qa_n: int = _DEFAULT_TRAIN_QA_N,
     train_ranking_n: int = _DEFAULT_TRAIN_RANKING_N,
 ) -> Dataset:
-    """Load parquet splits and build subsampled train SFT data plus full validation.
+    """Load parquet train data and build a subsampled train dataset.
 
     The full train parquet is filtered by ``task_type``, shuffled with ``seed``,
     and the first ``train_qa_n`` / ``train_ranking_n`` rows are taken per task.
-    The validation split is returned in full (all QA and ranking rows).
 
     Args:
         train_path: Path to the training parquet file.
@@ -40,8 +49,7 @@ def load_sft_dataset(
         train_ranking_n: Number of ranking rows to keep from the train split.
 
     Returns:
-        ``train_sft_dataset`` — HuggingFace ``Dataset``
-        instances; the train set is QA and ranking subsets concatenated and shuffled.
+        The train SFT dataset with sampled QA and ranking rows.
     """
     logger.info(f"{train_path=}, {seed=}, {train_qa_n=}, {train_ranking_n=}")
 
@@ -72,3 +80,96 @@ def load_sft_dataset(
     logger.info(f"{len(train_sft_dataset)=} (expected {train_qa_n + train_ranking_n})")
 
     return train_sft_dataset
+
+
+async def build_train_dataset_with_rollouts_async(
+    train_path: str,
+    rollout_output_jsonl_path: str,
+    model: str,
+    provider: str = "openai",
+    api_base: str | None = None,
+    api_key: str | None = None,
+    seed: int = 42,
+    train_qa_n: int = _DEFAULT_TRAIN_QA_N,
+    train_ranking_n: int = _DEFAULT_TRAIN_RANKING_N,
+    temperature: float = 0.0,
+    smoke_test: bool = False,
+) -> RolloutSummary:
+    """Builds sampled data and writes async model rollouts to cached JSONL."""
+    train_dataset = load_sft_dataset(
+        train_path=train_path,
+        seed=seed,
+        train_qa_n=train_qa_n,
+        train_ranking_n=train_ranking_n,
+    )
+    dataset_for_rollout = build_smoke_dataset(train_dataset) if smoke_test else train_dataset
+    logger.info(
+        f"starting rollout generation. {rollout_output_jsonl_path=} {smoke_test=} "
+        f"{len(dataset_for_rollout)=}"
+    )
+    return await generate_and_cache_rollouts_async(
+        dataset=dataset_for_rollout,
+        output_jsonl_path=rollout_output_jsonl_path,
+        model=model,
+        provider=provider,
+        api_base=api_base,
+        api_key=api_key,
+        temperature=temperature,
+    )
+
+
+def parse_args() -> argparse.Namespace:
+    """Parses CLI args for dataset loading and rollout generation."""
+    parser = argparse.ArgumentParser(
+        description="Build SFT train dataset and optionally generate rollout JSONL."
+    )
+    parser.add_argument("--train_path", default=_DEFAULT_TRAIN_PATH)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--train_qa_n", type=int, default=_DEFAULT_TRAIN_QA_N)
+    parser.add_argument("--train_ranking_n", type=int, default=_DEFAULT_TRAIN_RANKING_N)
+    parser.add_argument("--rollout_output_jsonl_path", default="")
+    parser.add_argument("--model", default="gpt-4o-mini")
+    parser.add_argument("--provider", choices=["openai", "vllm"], default="openai")
+    parser.add_argument("--api_base", default=None)
+    parser.add_argument("--api_key", default=None)
+    parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--smoke-test", action="store_true", default=False)
+    return parser.parse_args()
+
+
+def main() -> None:
+    """Runs CLI entrypoint for loading data and optional rollout generation."""
+    logging.basicConfig(level=logging.INFO)
+    args = parse_args()
+    logger.info(f"{args=}")
+
+    if not args.rollout_output_jsonl_path:
+        dataset = load_sft_dataset(
+            train_path=args.train_path,
+            seed=args.seed,
+            train_qa_n=args.train_qa_n,
+            train_ranking_n=args.train_ranking_n,
+        )
+        logger.info(f"dataset loaded without rollout generation. {len(dataset)=}")
+        return
+
+    summary = asyncio.run(
+        build_train_dataset_with_rollouts_async(
+            train_path=args.train_path,
+            rollout_output_jsonl_path=args.rollout_output_jsonl_path,
+            model=args.model,
+            provider=args.provider,
+            api_base=args.api_base,
+            api_key=args.api_key,
+            seed=args.seed,
+            train_qa_n=args.train_qa_n,
+            train_ranking_n=args.train_ranking_n,
+            temperature=args.temperature,
+            smoke_test=args.smoke_test,
+        )
+    )
+    logger.info(f"rollout generation finished. {summary=}")
+
+
+if __name__ == "__main__":
+    main()
