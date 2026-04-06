@@ -12,6 +12,10 @@ from typing import Any, NamedTuple, cast
 
 from datasets import Dataset
 from openai import AsyncOpenAI
+import verifiers as vf
+
+from rlm_sec.envs.finance_env import FinanceSearchEnv, create_finance_env
+from rlm_sec.envs.tools import FINANCE_MAX_QA_TURNS
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +39,7 @@ class RolloutRecord(NamedTuple):
     """Represents one generated rollout row persisted to JSONL."""
 
     rollout_key: str
+    candidate_index: int
     metadata: dict[str, Any]
     conversation: list[dict[str, str]]
 
@@ -52,9 +57,10 @@ class PendingRollout(NamedTuple):
     """Represents one dataset row that still needs a generated rollout."""
 
     index: int
-    rollout_key: str
     metadata: dict[str, Any]
     prompt_messages: list[dict[str, str]]
+    missing_candidate_indices: list[int]
+    rollout_keys_by_candidate: dict[int, str]
 
 
 def _cast_prompt_messages(prompt: Any) -> list[dict[str, str]]:
@@ -74,12 +80,14 @@ def _compute_rollout_key(
     metadata: dict[str, Any],
     prompt_messages: list[dict[str, str]],
     model: str,
+    candidate_index: int,
 ) -> str:
     """Computes a stable unique key used for JSONL caching."""
     payload = {
         "metadata": metadata,
         "model": model,
         "prompt": prompt_messages,
+        "candidate_index": candidate_index,
     }
     serialized_payload = json.dumps(payload, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(serialized_payload.encode(_JSONL_ENCODING)).hexdigest()
@@ -119,6 +127,7 @@ def _append_rollout_records_sync(jsonl_path: str, records: list[RolloutRecord]) 
         for record in records:
             serialized_record = {
                 "rollout_key": record.rollout_key,
+                "candidate_index": record.candidate_index,
                 "metadata": record.metadata,
                 "conversation": record.conversation,
             }
@@ -145,43 +154,114 @@ def _build_openai_client() -> AsyncOpenAI:
     return AsyncOpenAI(api_key=api_key, base_url=base_url)
 
 
-async def _generate_assistant_response(
+def _extract_response_contents(response: Any) -> list[str]:
+    """Extracts non-null assistant contents from chat completion choices."""
+    contents: list[str] = []
+    for choice in response.choices:
+        content = choice.message.content or ""
+        contents.append(content)
+    return contents
+
+
+async def _generate_assistant_responses(
     client: AsyncOpenAI,
     model: str,
     messages: list[dict[str, str]],
     temperature: float,
     semaphore: asyncio.Semaphore,
-) -> str:
-    """Generates one assistant turn for the provided conversation history."""
+    n: int,
+) -> list[str]:
+    """Generates assistant turns for the provided conversation history."""
     async with semaphore:
         response = await client.chat.completions.create(
             model=model,
             messages=messages,
             temperature=temperature,
+            n=n,
         )
-    content = response.choices[0].message.content or ""
-    logger.info(f"assistant response generated. {model=} {len(content)=}")
-    return content
+    contents = _extract_response_contents(response)
+    logger.info(
+        f"assistant responses generated. {model=} {n=} "
+        f"{len(contents)=}"
+    )
+    return contents
 
 
 def _build_rollout_record(
     pending_rollout: PendingRollout,
-    assistant_content: str,
+    candidate_index: int,
+    conversation: list[dict[str, str]],
 ) -> RolloutRecord:
     """Builds rollout record with full conversation and metadata."""
-    conversation = list(pending_rollout.prompt_messages)
-    conversation.append({"role": "assistant", "content": assistant_content})
     return RolloutRecord(
-        rollout_key=pending_rollout.rollout_key,
+        rollout_key=pending_rollout.rollout_keys_by_candidate[candidate_index],
+        candidate_index=candidate_index,
         metadata=pending_rollout.metadata,
         conversation=conversation,
     )
+
+
+def _build_single_turn_conversation(
+    prompt_messages: list[dict[str, str]], assistant_content: str
+) -> list[dict[str, str]]:
+    """Builds a single-turn conversation from prompt plus assistant response."""
+    conversation = list(prompt_messages)
+    conversation.append({"role": "assistant", "content": assistant_content})
+    return conversation
+
+
+async def _run_qa_multiturn(
+    env: FinanceSearchEnv,
+    prompt_messages: list[dict[str, str]],
+    initial_assistant_content: str,
+    client: AsyncOpenAI,
+    model: str,
+    temperature: float,
+    semaphore: asyncio.Semaphore,
+) -> list[dict[str, str]]:
+    """Runs QA multi-turn rollout with env <information> feedback."""
+    messages: list[dict[str, str]] = list(prompt_messages)
+    state: vf.State = cast(vf.State, {})
+
+    for turn in range(FINANCE_MAX_QA_TURNS):
+        is_last_turn = turn == FINANCE_MAX_QA_TURNS - 1
+        logger.info(f"qa multiturn step. {turn=} {FINANCE_MAX_QA_TURNS=}")
+
+        assistant_content = initial_assistant_content
+        if turn > 0:
+            candidate_responses = await _generate_assistant_responses(
+                client=client,
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                semaphore=semaphore,
+                n=1,
+            )
+            assistant_content = candidate_responses[0] if candidate_responses else ""
+
+        messages.append({"role": "assistant", "content": assistant_content})
+        env_replies = await env.env_response(
+            messages=cast(vf.Messages, messages),
+            state=state,
+        )
+        logger.info(f"{env_replies=}")
+
+        if not env_replies:
+            logger.info("qa rollout complete from empty env reply.")
+            break
+        if is_last_turn:
+            logger.info("qa rollout reached max turns.")
+            break
+        messages.extend(cast(list[dict[str, str]], env_replies))
+
+    return messages
 
 
 def _build_pending_rollouts(
     dataset: Dataset,
     cached_rollouts: dict[str, dict[str, Any]],
     model: str,
+    n: int,
 ) -> tuple[list[PendingRollout], int]:
     """Builds pending rollout jobs and counts how many were cache hits."""
     pending_rollouts: list[PendingRollout] = []
@@ -191,50 +271,106 @@ def _build_pending_rollouts(
         example_dict = cast(dict[str, Any], example)
         prompt_messages = _cast_prompt_messages(example_dict.get("prompt", []))
         metadata = _build_metadata(example_dict)
-        rollout_key = _compute_rollout_key(
-            metadata=metadata,
-            prompt_messages=prompt_messages,
-            model=model,
-        )
-        if rollout_key in cached_rollouts:
-            reused_count += 1
-            logger.info(f"reusing cached rollout. {index=} {rollout_key=}")
-            continue
-
-        pending_rollouts.append(
-            PendingRollout(
-                index=index,
-                rollout_key=rollout_key,
+        missing_candidate_indices: list[int] = []
+        rollout_keys_by_candidate: dict[int, str] = {}
+        for candidate_index in range(n):
+            rollout_key = _compute_rollout_key(
                 metadata=metadata,
                 prompt_messages=prompt_messages,
+                model=model,
+                candidate_index=candidate_index,
             )
-        )
+            rollout_keys_by_candidate[candidate_index] = rollout_key
+            if rollout_key in cached_rollouts:
+                reused_count += 1
+                logger.info(
+                    f"reusing cached rollout. {index=} {candidate_index=} {rollout_key=}"
+                )
+                continue
+            missing_candidate_indices.append(candidate_index)
+
+        if missing_candidate_indices:
+            pending_rollouts.append(
+                PendingRollout(
+                    index=index,
+                    metadata=metadata,
+                    prompt_messages=prompt_messages,
+                    missing_candidate_indices=missing_candidate_indices,
+                    rollout_keys_by_candidate=rollout_keys_by_candidate,
+                )
+            )
 
     logger.info(f"prepared pending rollouts. {len(pending_rollouts)=} {reused_count=}")
     return pending_rollouts, reused_count
 
 
-async def _generate_rollout_record(
+def _is_qa_rollout(metadata: dict[str, Any]) -> bool:
+    """Returns True when the pending rollout is a QA example."""
+    task_type = str(metadata.get("task_type", _QA_TASK)).strip()
+    return task_type == _QA_TASK
+
+
+async def _generate_rollout_records(
+    env: FinanceSearchEnv,
     client: AsyncOpenAI,
     model: str,
     pending_rollout: PendingRollout,
     temperature: float,
     semaphore: asyncio.Semaphore,
-) -> RolloutRecord:
-    """Generates one rollout and returns a serializable record."""
-    assistant_content = await _generate_assistant_response(
+) -> list[RolloutRecord]:
+    """Generates one or more rollout candidates for a single dataset row."""
+    candidate_count = len(pending_rollout.missing_candidate_indices)
+    initial_assistant_responses = await _generate_assistant_responses(
         client=client,
         model=model,
         messages=pending_rollout.prompt_messages,
         temperature=temperature,
         semaphore=semaphore,
+        n=candidate_count,
     )
-    record = _build_rollout_record(
-        pending_rollout=pending_rollout,
-        assistant_content=assistant_content,
+    logger.info(
+        f"initial responses prepared. {pending_rollout.index=} "
+        f"{candidate_count=} {len(initial_assistant_responses)=}"
     )
-    logger.info(f"generated rollout. {pending_rollout.index=} {record.rollout_key=}")
-    return record
+
+    records: list[RolloutRecord] = []
+    for choice_index, candidate_index in enumerate(
+        pending_rollout.missing_candidate_indices
+    ):
+        if choice_index >= len(initial_assistant_responses):
+            logger.warning(
+                "response choices shorter than candidate count. "
+                f"{choice_index=} {candidate_index=} "
+                f"{len(initial_assistant_responses)=}"
+            )
+            break
+
+        initial_assistant_content = initial_assistant_responses[choice_index]
+        conversation = _build_single_turn_conversation(
+            prompt_messages=pending_rollout.prompt_messages,
+            assistant_content=initial_assistant_content,
+        )
+        if _is_qa_rollout(pending_rollout.metadata):
+            conversation = await _run_qa_multiturn(
+                env=env,
+                prompt_messages=pending_rollout.prompt_messages,
+                initial_assistant_content=initial_assistant_content,
+                client=client,
+                model=model,
+                temperature=temperature,
+                semaphore=semaphore,
+            )
+        record = _build_rollout_record(
+            pending_rollout=pending_rollout,
+            candidate_index=candidate_index,
+            conversation=conversation,
+        )
+        records.append(record)
+        logger.info(
+            "generated rollout candidate. "
+            f"{pending_rollout.index=} {candidate_index=} {record.rollout_key=}"
+        )
+    return records
 
 
 async def generate_and_cache_rollouts_async(
@@ -242,23 +378,30 @@ async def generate_and_cache_rollouts_async(
     output_jsonl_path: str,
     model: str,
     temperature: float = 0.0,
+    n: int = 1,
 ) -> RolloutSummary:
     """Generates rollouts for each row and persists cached JSONL records.
 
     Uses ``OPENAI_API_KEY`` (required) and ``OPENAI_BASE_URL`` (optional; default
     OpenAI endpoint when unset or empty) for the HTTP client.
     """
+    if n < 1:
+        raise ValueError(f"n must be at least 1. {n=}")
+
     client = _build_openai_client()
+    env = create_finance_env(dataset=dataset)
     cached_rollouts = _load_cached_rollouts(output_jsonl_path)
     pending_rollouts, reused_count = _build_pending_rollouts(
         dataset=dataset,
         cached_rollouts=cached_rollouts,
         model=model,
+        n=n,
     )
 
     semaphore = asyncio.Semaphore(_ROLLOUT_CONCURRENCY)
     tasks = [
-        _generate_rollout_record(
+        _generate_rollout_records(
+            env=env,
             client=client,
             model=model,
             pending_rollout=pending_rollout,
@@ -267,7 +410,12 @@ async def generate_and_cache_rollouts_async(
         )
         for pending_rollout in pending_rollouts
     ]
-    generated_records = await asyncio.gather(*tasks)
+    generated_nested_records = await asyncio.gather(*tasks)
+    generated_records = [
+        record
+        for generated_row in generated_nested_records
+        for record in generated_row
+    ]
 
     if generated_records:
         await _append_rollout_records_async(
@@ -279,7 +427,7 @@ async def generate_and_cache_rollouts_async(
     total_count = len(dataset)
     logger.info(
         f"rollout generation complete. {output_jsonl_path=} {generated_count=} "
-        f"{reused_count=} {total_count=} {_ROLLOUT_CONCURRENCY=}"
+        f"{reused_count=} {total_count=} {_ROLLOUT_CONCURRENCY=} {n=}"
     )
     return RolloutSummary(
         output_path=output_jsonl_path,
