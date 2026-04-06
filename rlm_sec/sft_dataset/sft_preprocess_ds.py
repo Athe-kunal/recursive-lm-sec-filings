@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import logging
+from loguru import logger
 
 from datasets import Dataset, concatenate_datasets, load_dataset
 
@@ -13,8 +13,6 @@ from rlm_sec.sft_dataset.rollout_generation import (
     build_smoke_dataset,
     generate_and_cache_rollouts_async,
 )
-
-logger = logging.getLogger(__name__)
 
 _DEFAULT_TRAIN_PATH = "data/train.parquet"
 _DEFAULT_TRAIN_QA_N = 1396
@@ -127,7 +125,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--train_qa_n", type=int, default=_DEFAULT_TRAIN_QA_N)
     parser.add_argument("--train_ranking_n", type=int, default=_DEFAULT_TRAIN_RANKING_N)
-    parser.add_argument("--rollout_output_jsonl_path", default="sft_data_n3.jsonl")
+    parser.add_argument("--rollout_output_jsonl_path", default="sft_data_n4.jsonl")
     parser.add_argument("--model", default="gpt-4o-mini")
     parser.add_argument("--rollout_temperature", type=float, default=1.0)
     parser.add_argument("--continuation_temperature", type=float, default=0.7)
@@ -138,7 +136,6 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     """Runs CLI entrypoint for loading data and optional rollout generation."""
-    logging.basicConfig(level=logging.INFO)
     args = parse_args()
     logger.info(f"{args=}")
 

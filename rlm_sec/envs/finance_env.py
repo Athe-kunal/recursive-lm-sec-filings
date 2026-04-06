@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from loguru import logger
 import re
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
@@ -29,6 +31,8 @@ from settings import (
     env_settings,
 )
 
+
+AsyncResponseFn = Callable[[list[dict[str, str]]], Awaitable[str]]
 
 ToolName = Literal[
     "SECFilingTool",
@@ -226,7 +230,9 @@ def _normalize_info(info: dict[str, Any] | None) -> dict[str, Any]:
     return info
 
 
-def _max_turns_for_task_type(task_type: str, max_qa_turns: int, max_ranking_turns: int) -> int:
+def _max_turns_for_task_type(
+    task_type: str, max_qa_turns: int, max_ranking_turns: int
+) -> int:
     """Return trajectory cap for this episode (assistant steps)."""
     if task_type == "ranking":
         return max_ranking_turns
@@ -248,7 +254,9 @@ class FinanceSearchEnv(vf.MultiTurnEnv):
 
     def __init__(self, tools: FinanceSearchTools, **kwargs: Any):
         max_qa_turns = int(kwargs.pop("max_qa_turns", FINANCE_MAX_QA_TURNS))
-        max_ranking_turns = int(kwargs.pop("max_ranking_turns", FINANCE_MAX_RANKING_TURNS))
+        max_ranking_turns = int(
+            kwargs.pop("max_ranking_turns", FINANCE_MAX_RANKING_TURNS)
+        )
         kwargs.setdefault("max_turns", max(max_qa_turns, max_ranking_turns))
         super().__init__(**kwargs)
         self._tools = tools
@@ -262,6 +270,16 @@ class FinanceSearchEnv(vf.MultiTurnEnv):
             _rollout_task_type(state), self.max_qa_turns, self.max_ranking_turns
         )
         return len(state["trajectory"]) >= limit and limit > 0
+
+    def _is_last_qa_turn(self, state: vf.State) -> bool:
+        """Return True when this is the final allowed turn for a QA episode."""
+        task_type = _rollout_task_type(state)
+        if task_type != "qa":
+            return False
+        limit = _max_turns_for_task_type(
+            task_type, self.max_qa_turns, self.max_ranking_turns
+        )
+        return limit > 0 and len(state.get("trajectory", [])) >= limit - 1
 
     async def env_response(self, messages: vf.Messages, state: vf.State) -> vf.Messages:
         """Execute search tools from the most recent assistant action."""
@@ -277,12 +295,16 @@ class FinanceSearchEnv(vf.MultiTurnEnv):
             return [{"role": "user", "content": response}]
 
         tool_output = await self._execute_parsed_action(parsed)
-        return [
-            {
-                "role": "user",
-                "content": f"\n<information>\n{tool_output}</information>\n",
-            }
-        ]
+        content = f"\n<information>\n{tool_output}</information>\n"
+
+        if self._is_last_qa_turn(state):
+            content += (
+                "You have exceeded all search retries. "
+                "You must now answer the question using the information gathered. "
+                "Enclose your final answer within <answer> and </answer> tags."
+            )
+
+        return [{"role": "user", "content": content}]
 
     async def _execute_parsed_action(self, parsed: ParsedSearch) -> str:
         """Route parsed action to the corresponding finance tool."""
@@ -303,6 +325,48 @@ class FinanceSearchEnv(vf.MultiTurnEnv):
             )
 
         return await self._tools.company_name_to_ticker(name=parsed.lookup_arg or "")
+
+    async def run_multiturn(
+        self,
+        prompt_messages: list[dict[str, str]],
+        initial_assistant_content: str,
+        response_fn: AsyncResponseFn,
+        task_type: DataTaskType = "qa",
+    ) -> list[dict[str, str]]:
+        """Run a full multi-turn rollout using the provided response generator.
+
+        Manages trajectory tracking, `_is_last_qa_turn` hint injection, and
+        termination (empty env reply on `<answer>` or hitting the turn budget).
+        `response_fn` is called for every turn after the first to produce the
+        next assistant message given the accumulated message history.
+        """
+        messages: list[dict[str, str]] = list(prompt_messages)
+        state: vf.State = cast(
+            vf.State, {"trajectory": [], "info": {"task_type": task_type}}
+        )
+        limit = _max_turns_for_task_type(
+            task_type, self.max_qa_turns, self.max_ranking_turns
+        )
+
+        for turn in range(limit):
+            logger.info(f"multiturn step. {turn=} {limit=} {task_type=}")
+            assistant_content = (
+                initial_assistant_content if turn == 0 else await response_fn(messages)
+            )
+            messages.append({"role": "assistant", "content": assistant_content})
+            state["trajectory"].append(turn)
+
+            env_replies = await self.env_response(
+                messages=cast(vf.Messages, messages),
+                state=state,
+            )
+            logger.info(f"{env_replies=}")
+
+            if not env_replies or turn == limit - 1:
+                break
+            messages.extend(cast(list[dict[str, str]], env_replies))
+
+        return messages
 
 
 async def reward_correctness(
@@ -334,12 +398,6 @@ async def reward_format(completion: vf.Messages, info: dict[str, Any] | None) ->
         return reward.format
 
     return _intermediate_format_reward(_parse_search_action(latest_action))
-
-
-# ---------------------------------------------------------------------------
-# Metric-only reward functions (weight=0 in the rubric — observability only).
-# These never contribute to the training signal but appear in rollout logs.
-# ---------------------------------------------------------------------------
 
 
 async def reward_ranking_precision(

@@ -5,8 +5,9 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
-import logging
+from loguru import logger
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NamedTuple, cast
 
@@ -15,9 +16,7 @@ from openai import AsyncOpenAI
 import verifiers as vf
 
 from rlm_sec.envs.finance_env import FinanceSearchEnv, create_finance_env
-from rlm_sec.envs.tools import FINANCE_MAX_QA_TURNS
-
-logger = logging.getLogger(__name__)
+from rlm_sec.envs.rewards import DataTaskType
 
 _QA_TASK = "qa"
 _RANKING_TASK = "ranking"
@@ -277,8 +276,34 @@ async def _generate_assistant_responses(
             n=n,
         )
     contents = _extract_response_contents(response)
-    logger.info(f"assistant responses generated. {model=} {n=} " f"{len(contents)=}")
+    logger.info(f"assistant responses generated. {model=} {n=} {len(contents)=}")
     return contents
+
+
+@dataclass
+class _ContinuationResponseFn:
+    """Callable that generates the next assistant turn via the OpenAI API.
+
+    Wraps `_generate_assistant_responses` with fixed client/model/temperature/
+    semaphore parameters so it can be passed to `FinanceSearchEnv.run_multiturn`
+    as an `AsyncResponseFn` without using nested function definitions.
+    """
+
+    client: AsyncOpenAI
+    model: str
+    temperature: float
+    semaphore: asyncio.Semaphore
+
+    async def __call__(self, messages: list[dict[str, str]]) -> str:
+        responses = await _generate_assistant_responses(
+            client=self.client,
+            model=self.model,
+            messages=messages,
+            temperature=self.temperature,
+            semaphore=self.semaphore,
+            n=1,
+        )
+        return responses[0] if responses else ""
 
 
 def _build_rollout_record(
@@ -292,53 +317,6 @@ def _build_rollout_record(
         prompt_messages=pending_rollout.prompt_messages,
         choices=choices,
     )
-
-
-async def _run_qa_multiturn(
-    env: FinanceSearchEnv,
-    prompt_messages: list[dict[str, str]],
-    initial_assistant_content: str,
-    client: AsyncOpenAI,
-    model: str,
-    continuation_temperature: float,
-    semaphore: asyncio.Semaphore,
-) -> list[dict[str, str]]:
-    """Runs QA multi-turn rollout and returns the full conversation."""
-    messages: list[dict[str, str]] = list(prompt_messages)
-    state: vf.State = cast(vf.State, {})
-
-    for turn in range(FINANCE_MAX_QA_TURNS):
-        is_last_turn = turn == FINANCE_MAX_QA_TURNS - 1
-        logger.info(f"qa multiturn step. {turn=} {FINANCE_MAX_QA_TURNS=}")
-
-        assistant_content = initial_assistant_content
-        if turn > 0:
-            candidate_responses = await _generate_assistant_responses(
-                client=client,
-                model=model,
-                messages=messages,
-                temperature=continuation_temperature,
-                semaphore=semaphore,
-                n=1,
-            )
-            assistant_content = candidate_responses[0] if candidate_responses else ""
-
-        messages.append({"role": "assistant", "content": assistant_content})
-        env_replies = await env.env_response(
-            messages=cast(vf.Messages, messages),
-            state=state,
-        )
-        logger.info(f"{env_replies=}")
-
-        if not env_replies:
-            logger.info("qa rollout complete from empty env reply.")
-            break
-        if is_last_turn:
-            logger.info("qa rollout reached max turns.")
-            break
-        messages.extend(cast(list[dict[str, str]], env_replies))
-
-    return messages
 
 
 def _build_pending_rollouts(
@@ -411,19 +389,25 @@ async def _generate_rollout_record(
         f"{n=} {len(initial_assistant_responses)=}"
     )
 
+    response_fn = _ContinuationResponseFn(
+        client=client,
+        model=model,
+        temperature=continuation_temperature,
+        semaphore=semaphore,
+    )
+    raw_task_type = str(pending_rollout.metadata.get("task_type", _QA_TASK))
+    task_type = cast(DataTaskType, raw_task_type)
+
     choices: list[RolloutChoice] = []
     for choice_index, initial_assistant_content in enumerate(
         initial_assistant_responses
     ):
         if _is_qa_rollout(pending_rollout.metadata):
-            conversation = await _run_qa_multiturn(
-                env=env,
+            conversation = await env.run_multiturn(
                 prompt_messages=pending_rollout.prompt_messages,
                 initial_assistant_content=initial_assistant_content,
-                client=client,
-                model=model,
-                continuation_temperature=continuation_temperature,
-                semaphore=semaphore,
+                response_fn=response_fn,
+                task_type=task_type,
             )
         else:
             conversation = list(pending_rollout.prompt_messages) + [
