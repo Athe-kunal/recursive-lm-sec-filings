@@ -90,6 +90,7 @@ async def build_train_dataset_with_rollouts_async(
     train_qa_n: int = _DEFAULT_TRAIN_QA_N,
     train_ranking_n: int = _DEFAULT_TRAIN_RANKING_N,
     temperature: float = 0.0,
+    n: int = 1,
     smoke_test: bool = False,
 ) -> RolloutSummary:
     """Builds sampled data and writes async model rollouts to cached JSONL."""
@@ -111,6 +112,7 @@ async def build_train_dataset_with_rollouts_async(
         output_jsonl_path=rollout_output_jsonl_path,
         model=model,
         temperature=temperature,
+        n=n,
     )
 
 
@@ -126,6 +128,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rollout_output_jsonl_path", default="sft_data.jsonl")
     parser.add_argument("--model", default="gpt-4o-mini")
     parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--n", type=int, default=1)
     parser.add_argument("--smoke-test", action="store_true", default=False)
     return parser.parse_args()
 
@@ -155,6 +158,7 @@ def main() -> None:
             train_qa_n=args.train_qa_n,
             train_ranking_n=args.train_ranking_n,
             temperature=args.temperature,
+            n=args.n,
             smoke_test=args.smoke_test,
         )
     )
