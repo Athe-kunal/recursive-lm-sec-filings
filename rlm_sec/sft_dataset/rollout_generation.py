@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 _QA_TASK = "qa"
 _RANKING_TASK = "ranking"
 _JSONL_ENCODING = "utf-8"
-_DEFAULT_API_KEY_FOR_VLLM = "EMPTY"
 _ROLLOUT_CONCURRENCY = 8
 
 _METADATA_FIELDS = (
@@ -133,37 +132,17 @@ async def _append_rollout_records_async(
     await asyncio.to_thread(_append_rollout_records_sync, jsonl_path, records)
 
 
-def _build_openai_client(
-    provider: str,
-    api_base: str | None,
-    api_key: str | None,
-) -> AsyncOpenAI:
-    """Creates an OpenAI-compatible async client for OpenAI or vLLM endpoints."""
-    normalized_provider = provider.strip().lower()
-    if normalized_provider not in {"openai", "vllm"}:
-        raise ValueError(f"provider must be one of {{'openai', 'vllm'}}. {provider=}")
+def _build_openai_client() -> AsyncOpenAI:
+    """Creates an AsyncOpenAI client from OPENAI_API_KEY and OPENAI_BASE_URL."""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY must be set for rollout generation.")
 
-    resolved_api_base = api_base
-    resolved_api_key = api_key
+    base_url_raw = os.getenv("OPENAI_BASE_URL", "").strip()
+    base_url = base_url_raw or None
 
-    if normalized_provider == "openai":
-        if resolved_api_key is None:
-            resolved_api_key = os.getenv("OPENAI_API_KEY")
-        if not resolved_api_key:
-            raise ValueError("OPENAI_API_KEY is required when provider='openai'.")
-    else:
-        if resolved_api_base is None:
-            resolved_api_base = os.getenv("VLLM_BASE_URL")
-        if not resolved_api_base:
-            raise ValueError("VLLM_BASE_URL is required when provider='vllm'.")
-        if resolved_api_key is None:
-            resolved_api_key = os.getenv("VLLM_API_KEY", _DEFAULT_API_KEY_FOR_VLLM)
-
-    logger.info(
-        f"building client. {normalized_provider=} {resolved_api_base=} "
-        f"api_key_provided={bool(resolved_api_key)}"
-    )
-    return AsyncOpenAI(api_key=resolved_api_key, base_url=resolved_api_base)
+    logger.info(f"building OpenAI client. {base_url=}")
+    return AsyncOpenAI(api_key=api_key, base_url=base_url)
 
 
 async def _generate_assistant_response(
@@ -262,13 +241,14 @@ async def generate_and_cache_rollouts_async(
     dataset: Dataset,
     output_jsonl_path: str,
     model: str,
-    provider: str = "openai",
-    api_base: str | None = None,
-    api_key: str | None = None,
     temperature: float = 0.0,
 ) -> RolloutSummary:
-    """Generates rollouts for each row and persists cached JSONL records."""
-    client = _build_openai_client(provider=provider, api_base=api_base, api_key=api_key)
+    """Generates rollouts for each row and persists cached JSONL records.
+
+    Uses ``OPENAI_API_KEY`` (required) and ``OPENAI_BASE_URL`` (optional; default
+    OpenAI endpoint when unset or empty) for the HTTP client.
+    """
+    client = _build_openai_client()
     cached_rollouts = _load_cached_rollouts(output_jsonl_path)
     pending_rollouts, reused_count = _build_pending_rollouts(
         dataset=dataset,

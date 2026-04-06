@@ -86,9 +86,6 @@ async def build_train_dataset_with_rollouts_async(
     train_path: str,
     rollout_output_jsonl_path: str,
     model: str,
-    provider: str = "openai",
-    api_base: str | None = None,
-    api_key: str | None = None,
     seed: int = 42,
     train_qa_n: int = _DEFAULT_TRAIN_QA_N,
     train_ranking_n: int = _DEFAULT_TRAIN_RANKING_N,
@@ -102,7 +99,9 @@ async def build_train_dataset_with_rollouts_async(
         train_qa_n=train_qa_n,
         train_ranking_n=train_ranking_n,
     )
-    dataset_for_rollout = build_smoke_dataset(train_dataset) if smoke_test else train_dataset
+    dataset_for_rollout = (
+        build_smoke_dataset(train_dataset) if smoke_test else train_dataset
+    )
     logger.info(
         f"starting rollout generation. {rollout_output_jsonl_path=} {smoke_test=} "
         f"{len(dataset_for_rollout)=}"
@@ -111,9 +110,6 @@ async def build_train_dataset_with_rollouts_async(
         dataset=dataset_for_rollout,
         output_jsonl_path=rollout_output_jsonl_path,
         model=model,
-        provider=provider,
-        api_base=api_base,
-        api_key=api_key,
         temperature=temperature,
     )
 
@@ -127,11 +123,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--train_qa_n", type=int, default=_DEFAULT_TRAIN_QA_N)
     parser.add_argument("--train_ranking_n", type=int, default=_DEFAULT_TRAIN_RANKING_N)
-    parser.add_argument("--rollout_output_jsonl_path", default="")
+    parser.add_argument("--rollout_output_jsonl_path", default="sft_data.jsonl")
     parser.add_argument("--model", default="gpt-4o-mini")
-    parser.add_argument("--provider", choices=["openai", "vllm"], default="openai")
-    parser.add_argument("--api_base", default=None)
-    parser.add_argument("--api_key", default=None)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--smoke-test", action="store_true", default=False)
     return parser.parse_args()
@@ -158,9 +151,6 @@ def main() -> None:
             train_path=args.train_path,
             rollout_output_jsonl_path=args.rollout_output_jsonl_path,
             model=args.model,
-            provider=args.provider,
-            api_base=args.api_base,
-            api_key=args.api_key,
             seed=args.seed,
             train_qa_n=args.train_qa_n,
             train_ranking_n=args.train_ranking_n,
