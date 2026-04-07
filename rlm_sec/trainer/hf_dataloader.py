@@ -48,6 +48,10 @@ DEFAULT_USER_CONTENT_PREFIX = (
     "first every time you get new information. In your reasoning, decide which document "
     "source is most likely to contain the answer (e.g. annual report, quarterly filing, "
     "earnings call, proxy statement, or current report) before calling any tool.\n\n"
+    "When generating queries, aim to make them clear, specific, and well-targeted to improve retrieval quality. "
+    "Avoid unnecessary details such as explicitly mentioning the year or quarter unless absolutely required.\n\n"
+    "For subsequent turns, refine and rephrase your queries to be more precise and focused based on previously retrieved information. "
+    "Continuously improve query specificity to increase the likelihood of retrieving the correct answer.\n\n"
     "You have three tools available:\n\n"
     "Tool 1 — Resolve company name to ticker (use this if you only have a company name):\n"
     '  Schema: {"company_name": string}\n'
@@ -58,18 +62,17 @@ DEFAULT_USER_CONTENT_PREFIX = (
     "  filing_type is one of: 10-K (annual), 10-Q1, 10-Q2, 10-Q3 (quarterly),\n"
     "  8-K (current report / material events), DEF 14A (proxy statement).\n"
     "  <search>SECFilingTool(query, ticker, year, filing_type)</search>\n"
-    "  Example: <search>SECFilingTool(How much cash from operations did Apple report for 2023?, AAPL, 2023, 10-K)</search>\n\n"
+    "  Example: <search>SECFilingTool(How much cash from operations did Apple report?, AAPL, 2023, 10-K)</search>\n\n"
     "Tool 3 — Earnings Call Transcripts:\n"
     '  Schema: {"query": string, "ticker": string, "year": string, "quarter": string}\n'
     "  quarter is one of: Q1, Q2, Q3, Q4.\n"
     "  <search>EarningsTranscriptTool(query, ticker, year, quarter)</search>\n"
-    "  Example: <search>EarningsTranscriptTool(What did Microsoft disclose about operating cash flow in Q2 2023?, MSFT, 2023, Q2)</search>\n\n"
+    "  Example: <search>EarningsTranscriptTool(What did Microsoft disclose about operating cash flow?, MSFT, 2023, Q2)</search>\n\n"
     "The search engine will return results between <information> and </information>. "
     "You can search as many times as needed. Once you have sufficient information, "
     "provide the final answer inside <answer> and </answer> without additional explanation. "
     "For example, <answer> The revenue increased by 16%. </answer>. \n\nQuestion: "
 )
-
 RANKING_USER_CONTENT_PREFIX = (
     "Given the question below, identify which document types are most relevant to answer it. "
     "You must conduct reasoning inside <think> and </think> tags before outputting the answer.\n\n"
