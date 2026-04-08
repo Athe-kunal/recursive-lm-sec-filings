@@ -30,6 +30,12 @@ _TABLE_BLOCK_PATTERN = re.compile(r"<table[\s\S]*?</table>", re.IGNORECASE)
 _ROW_PATTERN = re.compile(r"<tr[\s\S]*?</tr>", re.IGNORECASE)
 _CELL_PATTERN = re.compile(r"<(?:td|th)[^>]*>([\s\S]*?)</(?:td|th)>", re.IGNORECASE)
 _TAG_PATTERN = re.compile(r"<[^>]+>")
+# Percent or spelled-out large scale (e.g. "in millions", "$ billions").
+_FINANCIAL_SCALE_CONTEXT_PATTERN = re.compile(
+    r"%|\b(?:millions?|billions?)\b", re.IGNORECASE
+)
+# SEC index-of-contents style tables (Item 1., Part I | Page, ...).
+_TOC_ITEM_MARKER_PATTERN = re.compile(r"Item\s+\d+[A-Z]{0,2}\.", re.IGNORECASE)
 
 
 @dataclasses.dataclass(slots=True)
@@ -136,6 +142,23 @@ def _extract_markdown_tables(markdown_text: str) -> list[str]:
     return markdown_tables
 
 
+def _has_financial_scale_context(text: str) -> bool:
+    return _FINANCIAL_SCALE_CONTEXT_PATTERN.search(text) is not None
+
+
+def _is_toc_style_markdown_table(table: str) -> bool:
+    item_markers = _TOC_ITEM_MARKER_PATTERN.findall(table)
+    if len(item_markers) >= 3:
+        return True
+    lines = table.split("\n")
+    if not lines:
+        return False
+    first_line_lower = lines[0].lower()
+    if "page" in first_line_lower and "part " in first_line_lower:
+        return True
+    return False
+
+
 def _parse_sec_record(file_path: Path) -> _FilingRecord | None:
     parent_name = file_path.parent.name
     if "-" not in parent_name:
@@ -190,15 +213,41 @@ def _choose_numeric_preferred_paragraph(
     paragraphs: list[str],
     randomizer: random.Random,
 ) -> str | None:
-    numeric_paragraphs = [
-        paragraph for paragraph in paragraphs if re.search(r"\d", paragraph)
+    financial_paragraphs = [
+        paragraph
+        for paragraph in paragraphs
+        if _has_financial_scale_context(paragraph)
     ]
-    logger.info(f"{len(numeric_paragraphs)=}")
-    if numeric_paragraphs:
-        return randomizer.choice(numeric_paragraphs)
+    logger.info(f"{len(financial_paragraphs)=}")
+    if financial_paragraphs:
+        return randomizer.choice(financial_paragraphs)
     if not paragraphs:
         return None
     return randomizer.choice(paragraphs)
+
+
+def _choose_numeric_preferred_table(
+    markdown_tables: list[str],
+    randomizer: random.Random,
+) -> str | None:
+    non_toc_tables = [
+        table
+        for table in markdown_tables
+        if not _is_toc_style_markdown_table(table)
+    ]
+    financial_tables = [
+        table
+        for table in non_toc_tables
+        if _has_financial_scale_context(table)
+    ]
+    logger.info(
+        f"{len(financial_tables)=} {len(non_toc_tables)=} {len(markdown_tables)=}"
+    )
+    if financial_tables:
+        return randomizer.choice(financial_tables)
+    if non_toc_tables:
+        return randomizer.choice(non_toc_tables)
+    return None
 
 
 def _choose_contexts(
@@ -208,7 +257,7 @@ def _choose_contexts(
     paragraphs = _extract_paragraphs(content)
     markdown_tables = _extract_markdown_tables(content)
     paragraph_context = _choose_numeric_preferred_paragraph(paragraphs, randomizer)
-    table_context = randomizer.choice(markdown_tables) if markdown_tables else None
+    table_context = _choose_numeric_preferred_table(markdown_tables, randomizer)
 
     contexts: list[str] = []
     if paragraph_context is not None:
@@ -307,7 +356,7 @@ def _append_example(output_path: Path, example: SyntheticQAExample) -> None:
 
 @mcp.tool()
 async def generate_synthetic_qa_dataset(
-    output_jsonl_path: str,
+    output_jsonl_path: str = "synthetic_qa_dataset.jsonl",
     sec_root: str = "localworkspace/markdown/sec_data",
     earnings_root: str = "earnings_transcripts_data",
     random_seed: int = 42,
