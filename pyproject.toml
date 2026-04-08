@@ -28,13 +28,15 @@ dependencies = [
 ]
 
 [dependency-groups]
+synthetic-data-gen = [
+    "mcp>=1.15.0",
+]
 dev = [
     "pytest>=9.0.2",
 ]
 ocr-md = [
     "olmocr>=0.4.27",
     "chromadb>=1.0.20",
-    "openai>=1.0",
     "yfinance>=1.2.0",
     "langchain-text-splitters>=0.3.0",
     "markdownify>=0.13.1",
