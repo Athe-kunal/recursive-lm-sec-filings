@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import dataclasses
 import json
-import logging
+from loguru import logger
 import random
 import re
 from pathlib import Path
 from typing import Iterable
 
-LOGGER = logging.getLogger(__name__)
 
 _ALLOWED_SEC_FILINGS = {"10-Q1", "10-Q2", "10-Q3", "8-K", "DEF 14A"}
 _SENTENCE_SPLIT_REGEX = re.compile(r"(?<=[.!?])\s+")
@@ -35,13 +34,6 @@ class FileMetadata:
     ticker: str
     year: str
     filing_type: str
-
-
-def configure_logging() -> None:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s - %(message)s",
-    )
 
 
 def normalize_whitespace(text: str) -> str:
@@ -75,7 +67,7 @@ def read_clean_lines(file_path: Path) -> list[str]:
             continue
         cleaned_lines.append(normalized)
     cleaned_lines_count = len(cleaned_lines)
-    LOGGER.debug(f"{file_path=} {cleaned_lines_count=}")
+    logger.debug(f"{file_path=} {cleaned_lines_count=}")
     return cleaned_lines
 
 
@@ -332,7 +324,7 @@ def generate_examples_for_file(
         used_answers.add(sentence)
 
     examples_count = len(examples)
-    LOGGER.info(f"generated file examples. {metadata.path=} {examples_count=}")
+    logger.info(f"generated file examples. {metadata.path=} {examples_count=}")
     return examples
 
 
@@ -355,7 +347,7 @@ def collect_sec_files(base_dir: Path) -> list[FileMetadata]:
                 )
             )
     records_count = len(records)
-    LOGGER.info(f"collected sec files. {records_count=}")
+    logger.info(f"collected sec files. {records_count=}")
     return records
 
 
@@ -389,7 +381,7 @@ def collect_transcript_files(base_dir: Path) -> list[FileMetadata]:
                     )
                 )
     records_count = len(records)
-    LOGGER.info(f"collected transcript files. {records_count=}")
+    logger.info(f"collected transcript files. {records_count=}")
     return records
 
 
@@ -407,7 +399,7 @@ def sample_file_metadata(
         return combined_records
     sampled = random.sample(combined_records, required_files)
     sampled_count = len(sampled)
-    LOGGER.info(f"sampled files. {required_files=} {sampled_count=}")
+    logger.info(f"sampled files. {required_files=} {sampled_count=}")
     return sampled
 
 
@@ -424,7 +416,6 @@ def write_jsonl(output_path: Path, examples: Iterable[SyntheticQAExample]) -> in
 
 
 def main() -> None:
-    configure_logging()
     sec_base_dir = Path("localworkspace/markdown/sec_data")
     transcript_base_dir = Path("earnings_transcripts_data")
     output_path = Path("data/generated_synthetic_qa.jsonl")
@@ -455,7 +446,7 @@ def main() -> None:
         all_examples = all_examples[:target_examples]
 
     written_count = write_jsonl(output_path=output_path, examples=all_examples)
-    LOGGER.info(f"finished generating examples. {output_path=} {written_count=}")
+    logger.info(f"finished generating examples. {output_path=} {written_count=}")
 
 
 if __name__ == "__main__":
