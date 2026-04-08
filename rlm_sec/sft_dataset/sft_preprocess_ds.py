@@ -31,7 +31,7 @@ def _row_is_ranking(example: dict) -> bool:
 
 def load_sft_dataset(
     train_path: str = _DEFAULT_TRAIN_PATH,
-    seed: int = 42,
+    seed: int = 46,
     train_qa_n: int = _DEFAULT_TRAIN_QA_N,
     train_ranking_n: int = _DEFAULT_TRAIN_RANKING_N,
 ) -> Dataset:
@@ -100,7 +100,7 @@ async def build_train_dataset_with_rollouts_async(
         train_ranking_n=train_ranking_n,
     )
     dataset_for_rollout = (
-        build_smoke_dataset(train_dataset) if smoke_test else train_dataset
+        build_smoke_dataset(train_dataset, seed=seed) if smoke_test else train_dataset
     )
     logger.info(
         f"starting rollout generation. {rollout_output_jsonl_path=} {smoke_test=} "
@@ -122,7 +122,7 @@ def parse_args() -> argparse.Namespace:
         description="Build SFT train dataset and optionally generate rollout JSONL."
     )
     parser.add_argument("--train_path", default=_DEFAULT_TRAIN_PATH)
-    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--seed", type=int, default=44)
     parser.add_argument("--train_qa_n", type=int, default=_DEFAULT_TRAIN_QA_N)
     parser.add_argument("--train_ranking_n", type=int, default=_DEFAULT_TRAIN_RANKING_N)
     parser.add_argument("--rollout_output_jsonl_path", default="sft_data_n4.jsonl")

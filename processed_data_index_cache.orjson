@@ -1,0 +1,5302 @@
+{
+  "AAPL|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AAPL|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AAPL|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AAPL|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AAPL|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AAPL|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AAPL|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AAPL|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AAPL|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AAPL|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AAPL|2024|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ABBV|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ABBV|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ABBV|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ABBV|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ABBV|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ABBV|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ABBV|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ABBV|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ABBV|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ABNB|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ABNB|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ABNB|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ABNB|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ABNB|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ABNB|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ABNB|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ABNB|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ABNB|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ADBE|2017|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ADBE|2017|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ADBE|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ADBE|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ADBE|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ADBE|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ADBE|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ADBE|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ADBE|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ADBE|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ADBE|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ADBE|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AES|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AES|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AES|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AES|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AES|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AES|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AES|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AES|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AES|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AES|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMCR|2020|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2020|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2020|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2020|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2020|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2020|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2020|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMCR|2020|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMCR|2020|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMCR|2020|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMCR|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2022|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMCR|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMCR|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMCR|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMCR|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMCR|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMCR|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMCR|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMC|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMC|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMC|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMC|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMC|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMC|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMC|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMC|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMC|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMC|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMD|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMD|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMD|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMD|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMD|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMD|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMD|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMD|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMD|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMD|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMD|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMD|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMD|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMD|2023|10-Q3-1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMD|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMD|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMD|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMD|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMD|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMZN|2019|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMZN|2019|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMZN|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMZN|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMZN|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMZN|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMZN|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AMZN|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMZN|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMZN|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AMZN|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AVGO|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AVGO|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AVGO|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AVGO|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AVGO|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AVGO|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AVGO|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AVGO|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AVGO|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AVGO|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AWK|2020|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2020|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2020|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2020|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2020|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2020|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2020|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AWK|2020|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AWK|2020|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AWK|2021|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2021|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2021|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2021|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2021|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2021|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2021|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AWK|2021|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AWK|2021|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AWK|2021|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AWK|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AWK|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AWK|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AWK|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AWK|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AXP|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AXP|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AXP|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AXP|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AXP|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AXP|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AXP|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AXP|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AXP|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AXP|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AXP|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AXP|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AXP|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AXP|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AXP|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AXP|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AXP|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AXP|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AXP|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AZO|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AZO|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AZO|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AZO|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AZO|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AZO|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "AZO|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AZO|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AZO|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "AZO|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BAC|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BAC|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BAC|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BAC|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BA|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BA|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BA|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BA|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BA|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BA|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BA|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BA|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BA|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BA|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BBY|2017|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2017|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2017|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2017|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2019|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2019|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2019|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2019|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BBY|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BBY|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BBY|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BBY|2024|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2024|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2024|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2024|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2024|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2024|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BBY|2024|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BBY|2024|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BBY|2024|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BBY|2024|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "BRK-A|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BRK-A|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BRK-A|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BRK-A|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BRK-A|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BRK-B|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BRK-B|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BRK-B|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BRK-B|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "BRK-B|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CAT|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CAT|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CAT|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CAT|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CAT|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CAT|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CAT|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CAT|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CAT|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CB|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CB|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CB|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CB|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CB|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CB|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CB|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CB|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CB|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CMCSA|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CMCSA|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CMCSA|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CMCSA|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CMCSA|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CMCSA|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CMCSA|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CMCSA|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CMCSA|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CMG|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CMG|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CMG|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CMG|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CMG|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CMG|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CMG|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CMG|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CMG|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "COIN|2025|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COIN|2025|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COIN|2025|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COIN|2025|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COST|2021|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COST|2021|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COST|2021|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COST|2021|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COST|2021|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COST|2021|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COST|2021|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "COST|2021|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "COST|2021|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "COST|2021|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "COST|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COST|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COST|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COST|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COST|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COST|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "COST|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "COST|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "COST|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "COST|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CRM|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CRM|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CRM|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CRM|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CRM|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CRM|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CRM|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CSCO|2025|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CSCO|2025|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CSCO|2025|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CSCO|2025|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2018|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2018|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2018|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2018|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CVS|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CVS|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CVS|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CVS|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVS|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CVS|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CVS|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CVS|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CVX|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVX|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVX|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVX|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVX|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "CVX|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CVX|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CVX|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "CVX|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "DAL|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DAL|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DAL|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DAL|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DAL|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DAL|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "DAL|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "DAL|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "DAL|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "DLTR|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DLTR|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DLTR|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DLTR|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DLTR|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DLTR|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "DLTR|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "DLTR|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "DLTR|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "DVA|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DVA|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DVA|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DVA|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DVA|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DVA|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "DVA|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "DVA|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "DVA|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "DVA|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "EA|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EA|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EA|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EA|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EA|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EA|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EA|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "EA|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "EA|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "EA|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "EBAY|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EBAY|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EBAY|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EBAY|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EBAY|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EBAY|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "EBAY|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "EBAY|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "EBAY|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "EFX|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EFX|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EFX|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EFX|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EFX|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "EFX|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "EFX|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "EFX|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "EFX|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ENPH|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ENPH|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ENPH|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ENPH|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ENPH|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ENPH|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ENPH|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ENPH|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ENPH|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ENPH|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ETSY|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ETSY|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ETSY|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ETSY|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ETSY|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ETSY|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ETSY|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ETSY|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ETSY|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "FDX|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "FDX|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "FDX|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "FDX|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "FDX|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "FDX|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "FDX|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "FDX|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "FDX|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "FDX|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "F|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "F|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "F|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "F|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "F|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "F|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "F|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "F|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "F|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GILD|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GILD|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GILD|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GILD|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GILD|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GILD|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GILD|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GILD|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GILD|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GIS|2019|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2019|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2019|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2019|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2020|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2020|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2020|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2020|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2020|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2020|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2020|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GIS|2020|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GIS|2020|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GIS|2020|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GIS|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2022|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GIS|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GIS|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GIS|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GIS|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GIS|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GIS|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GIS|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GIS|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GLW|2020|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GLW|2020|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GLW|2020|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GLW|2020|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GLW|2021|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GLW|2021|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GLW|2021|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GLW|2021|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GLW|2021|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GLW|2021|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GLW|2021|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GLW|2021|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GLW|2021|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GLW|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GLW|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GLW|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GLW|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GLW|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GLW|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GLW|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GLW|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GLW|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GLW|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GME|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GME|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GME|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GME|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GME|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GM|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GM|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GM|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GM|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GM|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GM|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GM|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GM|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GM|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GOOGL|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GOOGL|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GOOGL|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GOOGL|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GOOGL|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GOOG|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GOOG|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GOOG|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GOOG|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GOOG|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GOOG|2025|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GOOG|2025|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GOOG|2025|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GOOG|2025|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GRMN|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GRMN|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GRMN|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GRMN|2023|10-Q3-1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GRMN|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "GRMN|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GRMN|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GRMN|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GRMN|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GS|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GS|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GS|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "GS|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HAS|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HAS|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HAS|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HAS|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HAS|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HAS|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HAS|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HAS|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HAS|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HD|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HD|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HD|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HD|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HD|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HD|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HD|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HD|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HD|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HLT|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HLT|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HLT|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HLT|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HLT|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HLT|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HLT|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HLT|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HLT|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HPE|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HPE|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HPE|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HPE|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HPE|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HPE|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HPE|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HPE|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HPE|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HPE|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HPQ|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HPQ|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HPQ|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HPQ|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HPQ|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HPQ|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HPQ|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HPQ|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HPQ|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HPQ|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HSY|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HSY|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HSY|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HSY|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HSY|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HSY|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HSY|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HSY|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HSY|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HUM|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HUM|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HUM|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HUM|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HUM|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "HUM|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HUM|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HUM|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "HUM|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "IBM|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "IBM|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "IBM|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "IBM|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "IBM|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "IBM|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "IBM|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "IBM|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "IBM|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ICE|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ICE|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ICE|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ICE|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ICE|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ICE|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ICE|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ICE|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ICE|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "INTU|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "INTU|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "INTU|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "INTU|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "INTU|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "INTU|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "INTU|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "INTU|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "INTU|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "INTU|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "IRM|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "IRM|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "IRM|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "IRM|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "IRM|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "IRM|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "IRM|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "IRM|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "IRM|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "IRM|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JNJ|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "JNJ|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "JNJ|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "JNJ|2022|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "JNJ|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "JNJ|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "JNJ|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JNJ|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JNJ|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JNJ|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JNJ|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "JNJ|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "JNJ|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "JNJ|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "JNJ|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "JNJ|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JNJ|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JNJ|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JNJ|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JPM|2021|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JPM|2021|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JPM|2021|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JPM|2021|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JPM|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JPM|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JPM|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JPM|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JPM|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JPM|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JPM|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "JPM|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KHC|2019|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KHC|2019|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KHC|2019|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KHC|2019|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2017|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2017|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2021|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2021|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2021|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2021|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2021|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2021|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2021|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KO|2021|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KO|2021|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KO|2021|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KO|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2022|10-Q3-1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KO|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KO|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KO|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KO|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KO|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KO|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KO|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KO|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KR|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KR|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KR|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KR|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KR|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "KR|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KR|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KR|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "KR|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LLY|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LLY|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LLY|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LLY|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LLY|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LLY|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LLY|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LLY|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LLY|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LMT|2020|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2020|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2020|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2020|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2020|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2020|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2020|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LMT|2020|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LMT|2020|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LMT|2020|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LMT|2021|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2021|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2021|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2021|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2021|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2021|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2021|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LMT|2021|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LMT|2021|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LMT|2021|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LMT|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LMT|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LMT|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LMT|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LMT|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LULU|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LULU|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LULU|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LULU|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LULU|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LULU|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LULU|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LULU|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LULU|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LVS|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LVS|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LVS|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LVS|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LVS|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "LVS|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LVS|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LVS|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "LVS|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "META|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "META|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "META|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "META|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "META|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MGM|2020|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2020|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2020|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2020|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2020|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2020|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MGM|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MGM|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MGM|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MGM|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MGM|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MGM|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MGM|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MGM|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MMM|2018|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2018|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2018|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2018|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MMM|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MMM|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MMM|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MMM|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MMM|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MMM|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MMM|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MMM|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MSFT|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MSFT|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MSFT|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MSFT|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MSFT|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MSFT|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "MSFT|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MSFT|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MSFT|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "MSFT|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NFLX|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NFLX|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NFLX|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NFLX|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NFLX|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NFLX|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NFLX|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NFLX|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NFLX|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NKE|2018|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2018|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2018|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2018|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2019|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2019|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2019|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2019|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2021|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2021|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2021|10-Q3": {
+    "exists": true,
+    "mtime": 1775368712,
+    "type": "sec_filings"
+  },
+  "NKE|2021|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2021|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2021|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2021|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NKE|2021|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NKE|2021|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NKE|2021|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NKE|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NKE|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NKE|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NKE|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NKE|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NVDA|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NVDA|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NVDA|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NVDA|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NVDA|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NVDA|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NVDA|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NVDA|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NVDA|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "NVDA|2025|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NVDA|2025|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "NVDA|2025|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2021|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2021|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2021|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2021|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2021|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2021|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2021|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PEP|2021|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PEP|2021|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PEP|2021|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PEP|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PEP|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PEP|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PEP|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PEP|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PEP|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PEP|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PEP|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PEP|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PFE|2021|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PFE|2021|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PFE|2021|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PFE|2021|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PFE|2021|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PFE|2021|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PFE|2021|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PFE|2021|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PFE|2021|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PFE|2021|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PFE|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PFE|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PFE|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PFE|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PFE|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PFE|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PFE|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PFE|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PFE|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PG|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PG|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PG|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PG|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PG|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PG|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PG|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PG|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PG|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PG|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PLTR|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PLTR|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PLTR|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PLTR|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PLTR|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PLTR|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PLTR|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PLTR|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PLTR|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PTON|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PTON|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PTON|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PTON|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PTON|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PTON|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PTON|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PTON|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PTON|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PTON|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PYPL|2022|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PYPL|2022|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PYPL|2022|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PYPL|2022|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PYPL|2022|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PYPL|2022|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "PYPL|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PYPL|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PYPL|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "PYPL|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "SBUX|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "SBUX|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "SBUX|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "SBUX|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "SBUX|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "SBUX|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "SBUX|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "SBUX|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "SBUX|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "SBUX|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "SBUX|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "SCHW|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "SCHW|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "SCHW|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "SCHW|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "SCHW|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "SCHW|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "SCHW|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "SCHW|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "SCHW|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "TSLA|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "TSLA|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "TSLA|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "TSLA|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "TSLA|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "TSLA|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "TSLA|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "TSLA|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "TSLA|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "T|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "T|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "T|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "T|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "T|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "T|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "T|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "T|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "T|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ULTA|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ULTA|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ULTA|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ULTA|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ULTA|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "ULTA|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ULTA|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ULTA|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "ULTA|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "UNH|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "UNH|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "UNH|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "UNH|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "UNH|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "UNH|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "UNH|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "UNH|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "UNH|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "VZ|2021|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "VZ|2021|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "VZ|2021|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "VZ|2021|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "VZ|2022|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "VZ|2022|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "VZ|2022|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "VZ|2022|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "V|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "V|2023|10-Q1": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "V|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "V|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "V|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "V|2023|DEF 14A": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "V|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "V|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "V|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "V|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "WMT|2023|10-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "WMT|2023|10-Q2": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "WMT|2023|10-Q3": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "WMT|2023|10-Q4": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "WMT|2023|8-K": {
+    "exists": true,
+    "mtime": 1775368710,
+    "type": "sec_markdown_filings"
+  },
+  "WMT|2023|Q1": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "WMT|2023|Q2": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "WMT|2023|Q3": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  },
+  "WMT|2023|Q4": {
+    "exists": true,
+    "mtime": 0,
+    "type": "earnings_data"
+  }
+}

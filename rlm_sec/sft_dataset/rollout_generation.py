@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import random
 from loguru import logger
 import os
 from dataclasses import dataclass
@@ -493,19 +494,27 @@ async def generate_and_cache_rollouts_async(
     )
 
 
-def _take_first_task_row(dataset: Dataset, task_type: str) -> dict[str, Any]:
-    """Selects the first row matching task_type from a dataset."""
-    for row in dataset:
-        row_dict = cast(dict[str, Any], row)
-        if row_dict.get("task_type") == task_type:
-            return row_dict
-    raise ValueError(f"No row found for task type. {task_type=}")
+def _take_random_task_row(
+    dataset: Dataset, task_type: str, seed: int = 42
+) -> dict[str, Any]:
+    """Selects a random row matching task_type from a dataset using the provided seed."""
+    matches = [
+        cast(dict[str, Any], row)
+        for row in dataset
+        if row.get("task_type") == task_type
+    ]
+    if not matches:
+        raise ValueError(f"No row found for task type. {task_type=}")
+    rng = random.Random(seed)
+    return rng.choice(matches)
 
 
-def build_smoke_dataset(dataset: Dataset) -> Dataset:
-    """Builds a 2-row smoke dataset with one QA and one ranking sample."""
-    qa_row = _take_first_task_row(dataset=dataset, task_type=_QA_TASK)
-    ranking_row = _take_first_task_row(dataset=dataset, task_type=_RANKING_TASK)
+def build_smoke_dataset(dataset: Dataset, seed: int = 42) -> Dataset:
+    """Builds a 2-row smoke dataset with one QA and one ranking sample, picking randomly."""
+    qa_row = _take_random_task_row(dataset=dataset, task_type=_QA_TASK, seed=seed)
+    ranking_row = _take_random_task_row(
+        dataset=dataset, task_type=_RANKING_TASK, seed=seed + 1
+    )
     smoke_dataset = Dataset.from_list([qa_row, ranking_row])
     logger.info(f"smoke dataset prepared. {len(smoke_dataset)=}")
     return smoke_dataset

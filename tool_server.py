@@ -99,6 +99,9 @@ async def sec_filings_to_embed_and_search(
             filing_type=request.filing_type,
             query=request.query,
             top_k=request.top_k,
+            candidate_k=50,
+            dense_weight=0.5,
+            sparse_weight=0.5,
         )
     except FileNotFoundError as exc:
         return _tool_error_response(
@@ -142,6 +145,9 @@ async def earnings_transcript_to_embed_and_search(
             filing_type=request.quarter,
             query=request.query,
             top_k=request.top_k,
+            candidate_k=50,
+            dense_weight=0.5,
+            sparse_weight=0.5,
         )
     except FileNotFoundError as exc:
         return _tool_error_response(

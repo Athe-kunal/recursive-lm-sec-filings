@@ -9,7 +9,7 @@ dependencies = [
     "aiohttp>=3.13.3",
     "black>=26.3.0",
     "datasets>=4.6.1",
-    "finance-data-llm>=0.1.10",
+    "finance-data-llm>=0.1.13",
     "ipykernel>=7.2.0",
     "loguru>=0.7.3",
     "omegaconf>=2.3.0",
@@ -38,6 +38,7 @@ ocr-md = [
     "yfinance>=1.2.0",
     "langchain-text-splitters>=0.3.0",
     "markdownify>=0.13.1",
+    "nltk>=3.9.4",
 ]
 
 [project.scripts]
