@@ -1,4 +1,4 @@
-"""MCP server for synthetic QA dataset building from local markdown filings."""
+"""MCP server for synthetic QA dataset generation from local markdown filings."""
 
 from __future__ import annotations
 
@@ -8,9 +8,11 @@ import random
 import re
 from pathlib import Path
 from typing import Any, NamedTuple
+from urllib.parse import quote, unquote
 
 from loguru import logger
 from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 _ALLOWED_SEC_FILING_TYPES = {
     "10-K",
@@ -30,12 +32,17 @@ _TABLE_BLOCK_PATTERN = re.compile(r"<table[\s\S]*?</table>", re.IGNORECASE)
 _ROW_PATTERN = re.compile(r"<tr[\s\S]*?</tr>", re.IGNORECASE)
 _CELL_PATTERN = re.compile(r"<(?:td|th)[^>]*>([\s\S]*?)</(?:td|th)>", re.IGNORECASE)
 _TAG_PATTERN = re.compile(r"<[^>]+>")
-# Percent or spelled-out large scale (e.g. "in millions", "$ billions").
 _FINANCIAL_SCALE_CONTEXT_PATTERN = re.compile(
     r"%|\b(?:millions?|billions?)\b", re.IGNORECASE
 )
-# SEC index-of-contents style tables (Item 1., Part I | Page, ...).
 _TOC_ITEM_MARKER_PATTERN = re.compile(r"Item\s+\d+[A-Z]{0,2}\.", re.IGNORECASE)
+
+_SYNTHETIC_QA_TASK_INSTRUCTIONS = (
+    "You are generating synthetic financial QA data. "
+    "Create exactly one question and one answer from the provided context. "
+    "The question and answer must be faithful to the context, numerically correct, "
+    "and must not invent facts. Return strict JSON only with keys question and answer."
+)
 
 
 @dataclasses.dataclass(slots=True)
@@ -64,7 +71,32 @@ class _ContextSelection(NamedTuple):
     table_context: str | None
 
 
-mcp = FastMCP("synthetic-qa-server")
+mcp_ngrok_allowed_hosts: list[str] = [
+    "shirleen-supercritical-contributively.ngrok-free.dev",
+]
+
+_SYNTHETIC_QA_SERVER_INSTRUCTIONS = (
+    "Local SEC markdown filings and earnings call transcripts are exposed as MCP resources. "
+    "Workflow: (1) Read resource URI `filings://catalog` (JSON) to list every document with "
+    "`ticker`, `year`, `filing_type`, `data_source`, and `uri`. (2) Read a document via "
+    "`filings://sec/{ticker}/{year}/{filing_type}` or "
+    "`filings://earnings/{ticker}/{year}/{quarter}` (markdown). "
+    "Path segments that contain spaces (for example `DEF 14A`) must be percent-encoded. "
+    "Tool `generate_synthetic_qa_dataset` batch-generates QA JSONL for all cataloged files "
+    "using the host model (sampling), not for ad hoc excerpts."
+)
+
+
+mcp = FastMCP(
+    "synthetic-qa-server",
+    instructions=_SYNTHETIC_QA_SERVER_INSTRUCTIONS,
+    host="localhost",
+    port=8088,
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=mcp_ngrok_allowed_hosts,
+    ),
+)
 
 
 def _normalize_whitespace(text: str) -> str:
@@ -142,23 +174,6 @@ def _extract_markdown_tables(markdown_text: str) -> list[str]:
     return markdown_tables
 
 
-def _has_financial_scale_context(text: str) -> bool:
-    return _FINANCIAL_SCALE_CONTEXT_PATTERN.search(text) is not None
-
-
-def _is_toc_style_markdown_table(table: str) -> bool:
-    item_markers = _TOC_ITEM_MARKER_PATTERN.findall(table)
-    if len(item_markers) >= 3:
-        return True
-    lines = table.split("\n")
-    if not lines:
-        return False
-    first_line_lower = lines[0].lower()
-    if "page" in first_line_lower and "part " in first_line_lower:
-        return True
-    return False
-
-
 def _parse_sec_record(file_path: Path) -> _FilingRecord | None:
     parent_name = file_path.parent.name
     if "-" not in parent_name:
@@ -209,14 +224,29 @@ def _collect_records(sec_root: Path, earnings_root: Path) -> list[_FilingRecord]
     return records
 
 
+def _has_financial_scale_context(text: str) -> bool:
+    return _FINANCIAL_SCALE_CONTEXT_PATTERN.search(text) is not None
+
+
+def _is_toc_style_markdown_table(table: str) -> bool:
+    item_markers = _TOC_ITEM_MARKER_PATTERN.findall(table)
+    if len(item_markers) >= 3:
+        return True
+    lines = table.split("\n")
+    if not lines:
+        return False
+    first_line_lower = lines[0].lower()
+    if "page" in first_line_lower and "part " in first_line_lower:
+        return True
+    return False
+
+
 def _choose_numeric_preferred_paragraph(
     paragraphs: list[str],
     randomizer: random.Random,
 ) -> str | None:
     financial_paragraphs = [
-        paragraph
-        for paragraph in paragraphs
-        if _has_financial_scale_context(paragraph)
+        paragraph for paragraph in paragraphs if _has_financial_scale_context(paragraph)
     ]
     logger.info(f"{len(financial_paragraphs)=}")
     if financial_paragraphs:
@@ -231,14 +261,10 @@ def _choose_numeric_preferred_table(
     randomizer: random.Random,
 ) -> str | None:
     non_toc_tables = [
-        table
-        for table in markdown_tables
-        if not _is_toc_style_markdown_table(table)
+        table for table in markdown_tables if not _is_toc_style_markdown_table(table)
     ]
     financial_tables = [
-        table
-        for table in non_toc_tables
-        if _has_financial_scale_context(table)
+        table for table in non_toc_tables if _has_financial_scale_context(table)
     ]
     logger.info(
         f"{len(financial_tables)=} {len(non_toc_tables)=} {len(markdown_tables)=}"
@@ -307,8 +333,7 @@ async def _request_qa_from_mcp_client(
     context: str,
 ) -> tuple[str, str]:
     prompt = (
-        "Generate exactly one QA pair as strict JSON with keys question and answer. "
-        "Use only the provided context.\n"
+        f"{_SYNTHETIC_QA_TASK_INSTRUCTIONS}\n\n"
         f"ticker_or_company_name={record.ticker_or_company_name}\n"
         f"year={record.year}\n"
         f"filing_type={record.filing_type}\n"
@@ -354,34 +379,155 @@ def _append_example(output_path: Path, example: SyntheticQAExample) -> None:
         file_obj.write(serialized + "\n")
 
 
+OUTPUT_JSONL_PATH = "synthetic_qa_dataset.jsonl"
+SEC_ROOT = "localworkspace/markdown/sec_data"
+EARNINGS_ROOT = "earnings_transcripts_data"
+RANDOM_SEED = 42
+MIN_QUESTIONS_PER_FILING_TYPE = 2
+MAX_QUESTIONS_PER_FILING_TYPE = 3
+OVERWRITE_OUTPUT = True
+
+
+def _filing_resource_uri(record: _FilingRecord) -> str:
+    ticker_q = quote(record.ticker_or_company_name, safe="")
+    year_q = quote(record.year, safe="")
+    type_q = quote(record.filing_type, safe="")
+    if record.data_source == "sec_data_markdown":
+        return f"filings://sec/{ticker_q}/{year_q}/{type_q}"
+    if record.data_source == "earnings_data_markdown":
+        return f"filings://earnings/{ticker_q}/{year_q}/{type_q}"
+    raise ValueError(f"Unknown {record.data_source=}")
+
+
+def _resolve_sec_markdown_path(
+    sec_root: Path, ticker: str, year: str, filing_type: str
+) -> Path:
+    path = sec_root / f"{ticker}-{year}" / f"{filing_type}.md"
+    return path
+
+
+def _resolve_earnings_markdown_path(
+    earnings_root: Path, ticker: str, year: str, quarter: str
+) -> Path:
+    dir_path = earnings_root / ticker / year
+    matches = sorted(dir_path.glob(f"{quarter}_*.md"))
+    if not matches:
+        raise FileNotFoundError(
+            f"No earnings markdown for {ticker=} {year=} {quarter=} under {dir_path=}"
+        )
+    if len(matches) > 1:
+        logger.warning(
+            f"Multiple earnings markdown files; using first. {ticker=} {year=} "
+            f"{quarter=} {matches=}"
+        )
+    chosen = matches[0]
+    return chosen
+
+
+def _catalog_dict_from_records(records: list[_FilingRecord]) -> dict[str, Any]:
+    documents: list[dict[str, Any]] = []
+    for record in records:
+        documents.append(
+            {
+                "uri": _filing_resource_uri(record),
+                "ticker": record.ticker_or_company_name,
+                "year": record.year,
+                "filing_type": record.filing_type,
+                "data_source": record.data_source,
+                "relative_path": str(record.file_path),
+            }
+        )
+    return {"document_count": len(documents), "documents": documents}
+
+
+@mcp.resource(
+    "filings://catalog",
+    name="filings_catalog",
+    title="Local filings index",
+    description=(
+        "JSON catalog of every indexed SEC markdown filing and earnings transcript: "
+        "ticker, year, filing_type, data_source, and the `uri` to pass to resources/read."
+    ),
+    mime_type="application/json",
+)
+def filings_catalog() -> str:
+    sec_root_path = Path(SEC_ROOT)
+    earnings_root_path = Path(EARNINGS_ROOT)
+    records = _collect_records(
+        sec_root=sec_root_path, earnings_root=earnings_root_path
+    )
+    payload = _catalog_dict_from_records(records)
+    logger.info(f"{payload['document_count']=}")
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+@mcp.resource(
+    "filings://sec/{ticker}/{year}/{filing_type}",
+    name="sec_filing_markdown",
+    title="SEC filing (markdown)",
+    description=(
+        "Full markdown for one SEC-derived filing. "
+        "Use filings://catalog to find valid ticker/year/filing_type; encode spaces in "
+        "filing_type (e.g. DEF%2014A)."
+    ),
+    mime_type="text/markdown",
+)
+def sec_filing_markdown(ticker: str, year: str, filing_type: str) -> str:
+    ticker = unquote(ticker)
+    year = unquote(year)
+    filing_type = unquote(filing_type)
+    path = _resolve_sec_markdown_path(Path(SEC_ROOT), ticker, year, filing_type)
+    if not path.is_file():
+        raise FileNotFoundError(f"SEC markdown not found: {path}")
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    logger.info(f"{path=} {len(text)=}")
+    return text
+
+
+@mcp.resource(
+    "filings://earnings/{ticker}/{year}/{quarter}",
+    name="earnings_transcript_markdown",
+    title="Earnings transcript (markdown)",
+    description=(
+        "Full markdown for one earnings call transcript (quarter is Q1, Q2, Q3, or Q4). "
+        "Matches files named like Q1_*.md under earnings_transcripts_data/{ticker}/{year}/."
+    ),
+    mime_type="text/markdown",
+)
+def earnings_transcript_markdown(ticker: str, year: str, quarter: str) -> str:
+    ticker = unquote(ticker)
+    year = unquote(year)
+    quarter = unquote(quarter)
+    path = _resolve_earnings_markdown_path(
+        Path(EARNINGS_ROOT), ticker, year, quarter
+    )
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    logger.info(f"{path=} {len(text)=}")
+    return text
+
+
 @mcp.tool()
-async def generate_synthetic_qa_dataset(
-    output_jsonl_path: str = "synthetic_qa_dataset.jsonl",
-    sec_root: str = "localworkspace/markdown/sec_data",
-    earnings_root: str = "earnings_transcripts_data",
-    random_seed: int = 42,
-    min_questions_per_filing_type: int = 2,
-    max_questions_per_filing_type: int = 3,
-    overwrite_output: bool = True,
-    ctx: Context | None = None,
-) -> dict[str, int | str]:
-    """Iterate filings, ask MCP client for QA from sampled contexts, and write JSONL."""
-    if ctx is None:
-        raise ValueError("ctx is required for MCP sampling.")
-    if min_questions_per_filing_type < 1:
-        raise ValueError("min_questions_per_filing_type must be >= 1")
-    if max_questions_per_filing_type < min_questions_per_filing_type:
+async def generate_synthetic_qa_dataset(ctx: Context) -> dict[str, int | str]:
+    """Iterate filings, ask MCP client for QA from sampled contexts, and write JSONL.
+
+    Paths, sampling bounds, and RNG seed are controlled by module-level constants
+    (OUTPUT_JSONL_PATH, SEC_ROOT, EARNINGS_ROOT, RANDOM_SEED,
+    MIN_QUESTIONS_PER_FILING_TYPE, MAX_QUESTIONS_PER_FILING_TYPE, OVERWRITE_OUTPUT).
+    """
+    if MIN_QUESTIONS_PER_FILING_TYPE < 1:
+        raise ValueError("MIN_QUESTIONS_PER_FILING_TYPE must be >= 1")
+    if MAX_QUESTIONS_PER_FILING_TYPE < MIN_QUESTIONS_PER_FILING_TYPE:
         raise ValueError(
-            "max_questions_per_filing_type must be >= min_questions_per_filing_type"
+            "MAX_QUESTIONS_PER_FILING_TYPE must be >= MIN_QUESTIONS_PER_FILING_TYPE"
         )
 
-    randomizer = random.Random(random_seed)
-    sec_root_path = Path(sec_root)
-    earnings_root_path = Path(earnings_root)
-    output_path = Path(output_jsonl_path)
+    randomizer = random.Random(RANDOM_SEED)
+    sec_root_path = Path(SEC_ROOT)
+    earnings_root_path = Path(EARNINGS_ROOT)
+    output_path = Path(OUTPUT_JSONL_PATH)
 
     records = _collect_records(sec_root=sec_root_path, earnings_root=earnings_root_path)
-    _prepare_output_file(output_path=output_path, overwrite_output=overwrite_output)
+    _prepare_output_file(output_path=output_path, overwrite_output=OVERWRITE_OUTPUT)
 
     written_examples = 0
     for record in records:
@@ -394,8 +540,8 @@ async def generate_synthetic_qa_dataset(
             continue
 
         question_count = randomizer.randint(
-            min_questions_per_filing_type,
-            max_questions_per_filing_type,
+            MIN_QUESTIONS_PER_FILING_TYPE,
+            MAX_QUESTIONS_PER_FILING_TYPE,
         )
         logger.info(f"{record.file_path=} {question_count=}")
         for _ in range(question_count):
@@ -424,4 +570,4 @@ async def generate_synthetic_qa_dataset(
 
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    mcp.run(transport="streamable-http")
