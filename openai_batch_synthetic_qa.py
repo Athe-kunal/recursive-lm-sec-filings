@@ -1,24 +1,36 @@
-"""Build OpenAI Batch API JSONL for numeric synthetic SEC / earnings QA.
+"""Build, submit, and parse OpenAI Batch API jobs for SEC / earnings QA.
 
 Each line is one POST ``/v1/chat/completions`` request with system and user
-messages containing sampled numeric paragraph and table contexts. The model
-returns structured QA pairs (JSON schema + Pydantic validation). Batch output
-is turned into ``SyntheticQAExample`` JSONL rows.
+messages containing sampled paragraph and table contexts. The model returns
+structured QA pairs (JSON schema + Pydantic validation). Batch output is
+turned into trainer ``QAExample`` JSONL rows.
+
+CLI entrypoint uses Python Fire: ``build-requests``, ``build-dataset``,
+``submit-batch`` (see ``python openai_batch_synthetic_qa.py --help``).
 """
 
 from __future__ import annotations
 
-import argparse
 import dataclasses
 import json
+import os
 import random
 import re
 from pathlib import Path
 from typing import Any, NamedTuple
-
+import dotenv
+import fire
 from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field
+import requests
 from tqdm.auto import tqdm
+
+dotenv.load_dotenv(".env")
+
+from rlm_sec.trainer.hf_dataloader import (
+    QAExample,
+    build_qa_prompt as _trainer_build_qa_prompt,
+)
 
 _ALLOWED_SEC_FILING_TYPES = {
     "10-K",
@@ -34,8 +46,13 @@ _DEFAULT_MODEL = "gpt-4.1-mini"
 _DEFAULT_BATCH_INPUT_PATH = "openai_batch_synthetic_qa_requests.jsonl"
 _DEFAULT_BATCH_OUTPUT_PATH = "openai_batch_synthetic_qa_output.jsonl"
 _DEFAULT_DATASET_OUTPUT_PATH = "synthetic_qa_dataset_from_batch.jsonl"
+_DEFAULT_API_BASE_URL = "https://api.openai.com/v1"
+_DEFAULT_BATCH_ENDPOINT = "/v1/chat/completions"
+_DEFAULT_COMPLETION_WINDOW = "24h"
+_DEFAULT_REQUEST_TIMEOUT_SECONDS = 120
 _DEFAULT_MAX_PARAGRAPH_CONTEXTS_PER_FILING = 2
 _DEFAULT_MAX_TABLE_CONTEXTS_PER_FILING = 2
+_SMOKE_TEST_REQUEST_LIMIT = 2
 _FINANCIAL_SCALE_CONTEXT_PATTERN = re.compile(
     r"%|\b(?:millions?|billions?)\b", re.IGNORECASE
 )
@@ -60,7 +77,7 @@ EARNINGS_ROOT = "earnings_transcripts_data"
 RANDOM_SEED = 42
 OVERWRITE_OUTPUT = True
 
-_CONTEXT_HEADER = "Numeric contexts:"
+_CONTEXT_HEADER = "Contexts:"
 
 
 class BatchSyntheticQAPair(BaseModel):
@@ -106,19 +123,6 @@ def _batch_response_json_schema() -> dict[str, Any]:
     }
 
 
-@dataclasses.dataclass(slots=True)
-class SyntheticQAExample:
-    question: str
-    answer: str
-    context: str
-    context_type: str
-    year: str
-    ticker_or_company_name: str
-    filing_type: str
-    data_source: str
-    task_type: str = "qa"
-
-
 class _RequestPayload(NamedTuple):
     custom_id: str
     body: dict[str, Any]
@@ -131,13 +135,27 @@ class _ParsedCustomID(NamedTuple):
 
 
 class _ParsedBatchRow(NamedTuple):
-    examples: list[SyntheticQAExample]
+    examples: list[QAExample]
     custom_id: str
     qa_count: int
 
 
+class _UploadedFile(NamedTuple):
+    file_id: str
+    response_json: dict[str, Any]
+
+
+class _CreatedBatch(NamedTuple):
+    batch_id: str
+    response_json: dict[str, Any]
+
+
 class _FilingRecord(NamedTuple):
-    file_path: Path
+    """One batch row after grouping. SEC rows use a single path; earnings may merge
+    multiple transcript files for the same ticker/year/quarter (unique ``custom_id``).
+    """
+
+    file_paths: tuple[Path, ...]
     ticker_or_company_name: str
     year: str
     filing_type: str
@@ -146,7 +164,7 @@ class _FilingRecord(NamedTuple):
 
 def _build_system_prompt() -> str:
     return (
-        "You generate synthetic financial question-answer pairs from SEC filings "
+        "Your task is to generate synthetic financial question-answer pairs from SEC filings "
         "and earnings transcripts. Given the provided text, formulate 1 to 3 "
         "questions and answers that are directly supported by the context. Look "
         "at the provided metadata such as company identifier, reporting year, and "
@@ -182,7 +200,7 @@ def _build_user_prompt(
 ) -> str:
     document_type_hint = _document_type_hint(filing_type=record.filing_type)
     lines: list[str] = [
-        "Generate 1 to 3 question-answer pairs from the numeric contexts below.",
+        "Generate 1 to 3 question-answer pairs from the contexts below.",
         (
             "Task: given the text, formulate questions and answers that are "
             "directly supported by the provided context."
@@ -194,7 +212,7 @@ def _build_user_prompt(
         ),
         (
             "Each question must be answerable directly from the contexts and "
-            "may focus on either numeric facts or brief descriptive facts."
+            "may focus on numeric facts, non-numeric facts, or short descriptive facts."
         ),
         "Keep the wording natural, concise, and specific.",
         "",
@@ -324,12 +342,8 @@ def _sample_contexts(
     return randomizer.sample(contexts, k=max_contexts)
 
 
-def _select_numeric_contexts(
-    markdown_text: str,
-    randomizer: random.Random,
-    max_paragraph_contexts: int,
-    max_table_contexts: int,
-) -> tuple[list[str], list[str]]:
+def _extract_numeric_contexts(markdown_text: str) -> tuple[list[str], list[str]]:
+    """All numeric paragraph/table contexts in one markdown document (no sampling)."""
     content = _extract_content_after_first_page(markdown_text)
 
     paragraphs = _extract_paragraphs(content)
@@ -339,10 +353,27 @@ def _select_numeric_contexts(
     non_toc_tables = [t for t in tables if not _is_toc_style_markdown_table(t)]
     numeric_tables = [t for t in non_toc_tables if _is_numeric_text(t)]
 
+    return numeric_paragraphs, numeric_tables
+
+
+def _gather_numeric_contexts_for_record(
+    record: _FilingRecord,
+    randomizer: random.Random,
+    max_paragraph_contexts: int,
+    max_table_contexts: int,
+) -> tuple[list[str], list[str]]:
+    """Pool numeric contexts from every file in ``record.file_paths``, then sample."""
+    all_paragraphs: list[str] = []
+    all_tables: list[str] = []
+    for path in record.file_paths:
+        markdown_text = path.read_text(encoding="utf-8", errors="ignore")
+        paras, tabs = _extract_numeric_contexts(markdown_text=markdown_text)
+        all_paragraphs.extend(paras)
+        all_tables.extend(tabs)
     sampled_paragraphs = _sample_contexts(
-        numeric_paragraphs, max_paragraph_contexts, randomizer
+        all_paragraphs, max_paragraph_contexts, randomizer
     )
-    sampled_tables = _sample_contexts(numeric_tables, max_table_contexts, randomizer)
+    sampled_tables = _sample_contexts(all_tables, max_table_contexts, randomizer)
     return sampled_paragraphs, sampled_tables
 
 
@@ -355,7 +386,7 @@ def _parse_sec_record(file_path: Path) -> _FilingRecord | None:
     if filing_type not in _ALLOWED_SEC_FILING_TYPES:
         return None
     return _FilingRecord(
-        file_path=file_path,
+        file_paths=(file_path,),
         ticker_or_company_name=ticker,
         year=year,
         filing_type=filing_type,
@@ -372,12 +403,58 @@ def _parse_transcript_record(file_path: Path) -> _FilingRecord | None:
     if quarter not in _ALLOWED_TRANSCRIPT_FILING_TYPES:
         return None
     return _FilingRecord(
-        file_path=file_path,
+        file_paths=(file_path,),
         ticker_or_company_name=ticker,
         year=year,
         filing_type=quarter,
         data_source="generated_earnings_data_markdown",
     )
+
+
+def _merge_earnings_transcript_records_by_quarter(
+    records: list[_FilingRecord],
+) -> list[_FilingRecord]:
+    """Collapse multiple earnings transcript files per (ticker, year, quarter) so
+    ``custom_id`` is unique and contexts are pooled from every file in the group.
+    """
+    sec_records: list[_FilingRecord] = []
+    earnings_by_key: dict[tuple[str, str, str], list[Path]] = {}
+    for record in records:
+        if record.data_source != "generated_earnings_data_markdown":
+            sec_records.append(record)
+            continue
+        key = (
+            record.ticker_or_company_name,
+            record.year,
+            record.filing_type,
+        )
+        earnings_by_key.setdefault(key, []).extend(record.file_paths)
+
+    merged_earnings: list[_FilingRecord] = []
+    for key in sorted(earnings_by_key.keys(), key=lambda k: (k[0], k[1], k[2])):
+        paths = earnings_by_key[key]
+        unique_paths = tuple(sorted(set(paths), key=lambda p: str(p)))
+        ticker, year, filing_type = key
+        if len(unique_paths) > 1:
+            logger.info(
+                f"merged earnings transcripts for {ticker=} {year=} {filing_type=} "
+                f"{len(unique_paths)=} {unique_paths=}"
+            )
+        merged_earnings.append(
+            _FilingRecord(
+                file_paths=unique_paths,
+                ticker_or_company_name=ticker,
+                year=year,
+                filing_type=filing_type,
+                data_source="generated_earnings_data_markdown",
+            )
+        )
+    merged = sec_records + merged_earnings
+    logger.info(
+        f"{len(records)=} after_earnings_merge={len(merged)} "
+        f"{len(sec_records)=} {len(merged_earnings)=}"
+    )
+    return merged
 
 
 def _collect_records(sec_root: Path, earnings_root: Path) -> list[_FilingRecord]:
@@ -391,6 +468,7 @@ def _collect_records(sec_root: Path, earnings_root: Path) -> list[_FilingRecord]
         if record is not None:
             records.append(record)
     logger.info(f"{sec_root=} {earnings_root=} {len(records)=}")
+    records = _merge_earnings_transcript_records_by_quarter(records=records)
     return records
 
 
@@ -438,6 +516,125 @@ def _request_row(payload: _RequestPayload) -> dict[str, Any]:
     }
 
 
+def _read_api_key() -> str:
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise ValueError("Expected OPENAI_API_KEY to be set in the environment.")
+    return api_key
+
+
+def _build_headers(api_key: str) -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {api_key}",
+    }
+
+
+def _validate_input_jsonl_path(input_jsonl_path: Path) -> None:
+    if not input_jsonl_path.exists():
+        raise FileNotFoundError(f"Input JSONL file does not exist: {input_jsonl_path}")
+    if not input_jsonl_path.is_file():
+        raise ValueError(f"Expected a file path, but got: {input_jsonl_path}")
+    if input_jsonl_path.suffix.lower() != ".jsonl":
+        raise ValueError(f"Expected a .jsonl file, but got: {input_jsonl_path}")
+
+
+def _parse_metadata_json(metadata_json: str) -> dict[str, str] | None:
+    if not metadata_json.strip():
+        return None
+
+    parsed = json.loads(metadata_json)
+    if not isinstance(parsed, dict):
+        raise ValueError("Expected --metadata-json to decode to a JSON object.")
+
+    normalized_metadata: dict[str, str] = {}
+    for key, value in parsed.items():
+        normalized_metadata[str(key)] = str(value)
+    return normalized_metadata
+
+
+def _upload_batch_input_file(
+    input_jsonl_path: Path,
+    api_base_url: str,
+    headers: dict[str, str],
+) -> _UploadedFile:
+    upload_url = f"{api_base_url}/files"
+    with input_jsonl_path.open("rb") as file_obj:
+        response = requests.post(
+            upload_url,
+            headers=headers,
+            data={"purpose": "batch"},
+            files={"file": (input_jsonl_path.name, file_obj, "application/jsonl")},
+            timeout=_DEFAULT_REQUEST_TIMEOUT_SECONDS,
+        )
+    response.raise_for_status()
+
+    response_json = response.json()
+    file_id = str(response_json["id"])
+    logger.info(f"{input_jsonl_path=} {file_id=}")
+    return _UploadedFile(file_id=file_id, response_json=response_json)
+
+
+def _build_batch_create_payload(
+    uploaded_file_id: str,
+    endpoint: str,
+    completion_window: str,
+    metadata: dict[str, str] | None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "input_file_id": uploaded_file_id,
+        "endpoint": endpoint,
+        "completion_window": completion_window,
+    }
+    if metadata:
+        payload["metadata"] = metadata
+    return payload
+
+
+def _create_batch_job(
+    uploaded_file_id: str,
+    api_base_url: str,
+    headers: dict[str, str],
+    endpoint: str,
+    completion_window: str,
+    metadata: dict[str, str] | None,
+) -> _CreatedBatch:
+    batch_url = f"{api_base_url}/batches"
+    payload = _build_batch_create_payload(
+        uploaded_file_id=uploaded_file_id,
+        endpoint=endpoint,
+        completion_window=completion_window,
+        metadata=metadata,
+    )
+    response = requests.post(
+        batch_url,
+        headers={**headers, "Content-Type": "application/json"},
+        json=payload,
+        timeout=_DEFAULT_REQUEST_TIMEOUT_SECONDS,
+    )
+    response.raise_for_status()
+
+    response_json = response.json()
+    batch_id = str(response_json["id"])
+    status = str(response_json.get("status", "unknown"))
+    logger.info(f"{batch_id=} {status=} {endpoint=} {completion_window=}")
+    return _CreatedBatch(batch_id=batch_id, response_json=response_json)
+
+
+def _write_batch_response_json(
+    output_json_path: Path | None,
+    batch_response_json: dict[str, Any],
+) -> None:
+    if output_json_path is None:
+        return
+
+    output_json_path.parent.mkdir(parents=True, exist_ok=True)
+    output_json_path.write_text(
+        json.dumps(batch_response_json, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    logger.info(f"{output_json_path=}")
+
+
 def _write_jsonl_lines(
     output_path: Path, lines: list[str], overwrite_output: bool
 ) -> None:
@@ -448,6 +645,21 @@ def _write_jsonl_lines(
             file_obj.write(line + "\n")
 
 
+def _order_records_for_request_build(
+    records: list[_FilingRecord],
+    smoke_test: bool,
+    randomizer: random.Random,
+) -> list[_FilingRecord]:
+    ordered_records = list(records)
+    if smoke_test:
+        randomizer.shuffle(ordered_records)
+    return ordered_records
+
+
+def _has_reached_smoke_test_limit(smoke_test: bool, request_count: int) -> bool:
+    return smoke_test and request_count >= _SMOKE_TEST_REQUEST_LIMIT
+
+
 def build_batch_requests(
     sec_root: Path,
     earnings_root: Path,
@@ -456,29 +668,32 @@ def build_batch_requests(
     overwrite_output: bool,
     max_paragraph_contexts_per_filing: int,
     max_table_contexts_per_filing: int,
+    smoke_test: bool,
 ) -> int:
     randomizer = random.Random(RANDOM_SEED)
     records = _collect_records(sec_root=sec_root, earnings_root=earnings_root)
+    ordered_records = _order_records_for_request_build(
+        records=records,
+        smoke_test=smoke_test,
+        randomizer=randomizer,
+    )
 
     serialized_rows: list[str] = []
     with tqdm(
-        records,
+        ordered_records,
         desc="Building batch requests",
         unit="filing",
     ) as progress:
         for record in progress:
-            markdown_text = record.file_path.read_text(
-                encoding="utf-8", errors="ignore"
-            )
-            paragraph_contexts, table_contexts = _select_numeric_contexts(
-                markdown_text=markdown_text,
+            paragraph_contexts, table_contexts = _gather_numeric_contexts_for_record(
+                record=record,
                 randomizer=randomizer,
                 max_paragraph_contexts=max_paragraph_contexts_per_filing,
                 max_table_contexts=max_table_contexts_per_filing,
             )
             if not paragraph_contexts and not table_contexts:
                 tqdm.write(
-                    f"skip {record.file_path=} "
+                    f"skip {record.file_paths=} "
                     f"(no numeric paragraph or table contexts)"
                 )
                 progress.set_postfix_str("skipped", refresh=True)
@@ -493,12 +708,22 @@ def build_batch_requests(
             serialized_rows.append(
                 json.dumps(_request_row(payload), ensure_ascii=False)
             )
+            file_label = (
+                record.file_paths[0].name
+                if len(record.file_paths) == 1
+                else f"{len(record.file_paths)}_md_files"
+            )
             progress.set_postfix(
                 p=len(paragraph_contexts),
                 t=len(table_contexts),
-                file=record.file_path.name,
+                file=file_label,
                 refresh=True,
             )
+            if _has_reached_smoke_test_limit(
+                smoke_test=smoke_test,
+                request_count=len(serialized_rows),
+            ):
+                break
 
     _write_jsonl_lines(
         output_path=output_jsonl_path,
@@ -508,6 +733,41 @@ def build_batch_requests(
     request_count = len(serialized_rows)
     logger.info(f"{request_count=} {output_jsonl_path=}")
     return request_count
+
+
+def submit_batch_job(
+    input_jsonl_path: Path,
+    endpoint: str = _DEFAULT_BATCH_ENDPOINT,
+    completion_window: str = _DEFAULT_COMPLETION_WINDOW,
+    api_base_url: str = _DEFAULT_API_BASE_URL,
+    metadata_json: str = "",
+    output_json_path: Path | None = None,
+) -> _CreatedBatch:
+    _validate_input_jsonl_path(input_jsonl_path=input_jsonl_path)
+
+    normalized_api_base_url = api_base_url.rstrip("/")
+    api_key = _read_api_key()
+    headers = _build_headers(api_key=api_key)
+    metadata = _parse_metadata_json(metadata_json=metadata_json)
+
+    uploaded_file = _upload_batch_input_file(
+        input_jsonl_path=input_jsonl_path,
+        api_base_url=normalized_api_base_url,
+        headers=headers,
+    )
+    created_batch = _create_batch_job(
+        uploaded_file_id=uploaded_file.file_id,
+        api_base_url=normalized_api_base_url,
+        headers=headers,
+        endpoint=endpoint,
+        completion_window=completion_window,
+        metadata=metadata,
+    )
+    _write_batch_response_json(
+        output_json_path=output_json_path,
+        batch_response_json=created_batch.response_json,
+    )
+    return created_batch
 
 
 def _extract_response_text(row: dict[str, Any]) -> str:
@@ -586,6 +846,25 @@ def _extract_context_from_request_body(request_body: dict[str, Any]) -> str:
     return after_header.strip()
 
 
+def _build_trainer_qa_example(
+    qa: BatchSyntheticQAPair,
+    context: str,
+    meta: _ParsedCustomID,
+) -> QAExample:
+    question = _normalize_whitespace(qa.question)
+    answer = _normalize_whitespace(qa.answer)
+    return QAExample(
+        prompt=_trainer_build_qa_prompt(question=question),
+        answer=answer,
+        context=context,
+        year=meta.year,
+        ticker_or_company_name=meta.ticker,
+        filing_type=meta.filing_type,
+        data_source="generated_openai_batch_synthetic_qa",
+        task_type="qa",
+    )
+
+
 def _build_examples_from_batch_row(row: dict[str, Any]) -> _ParsedBatchRow:
     custom_id = str(row["custom_id"])
     meta = _parse_custom_id(custom_id=custom_id)
@@ -595,31 +874,9 @@ def _build_examples_from_batch_row(row: dict[str, Any]) -> _ParsedBatchRow:
     request_body = row.get("request", {}).get("body", {})
     context = _extract_context_from_request_body(request_body=request_body)
 
-    has_paragraph = "### Paragraph " in context
-    has_table = "### Table " in context
-    if has_paragraph and has_table:
-        context_type = "paragraph_and_table"
-    elif has_paragraph:
-        context_type = "paragraph_only"
-    else:
-        context_type = "table_only"
-
-    examples: list[SyntheticQAExample] = []
+    examples: list[QAExample] = []
     for qa in qas:
-        question = _normalize_whitespace(qa.question)
-        answer = _normalize_whitespace(qa.answer)
-        examples.append(
-            SyntheticQAExample(
-                question=question,
-                answer=answer,
-                context=context,
-                context_type=context_type,
-                year=meta.year,
-                ticker_or_company_name=meta.ticker,
-                filing_type=meta.filing_type,
-                data_source="generated_openai_batch_synthetic_qa",
-            )
-        )
+        examples.append(_build_trainer_qa_example(qa=qa, context=context, meta=meta))
 
     return _ParsedBatchRow(
         examples=examples,
@@ -628,12 +885,13 @@ def _build_examples_from_batch_row(row: dict[str, Any]) -> _ParsedBatchRow:
     )
 
 
-def build_dataset_from_batch_output(
+def build_qa_examples_from_batch_output(
     batch_output_jsonl_path: Path,
     output_dataset_jsonl_path: Path,
     overwrite_output: bool,
-) -> int:
+) -> list[QAExample]:
     dataset_rows: list[str] = []
+    qa_examples: list[QAExample] = []
     with batch_output_jsonl_path.open("r", encoding="utf-8") as file_obj:
         for line in file_obj:
             stripped_line = line.strip()
@@ -643,6 +901,7 @@ def build_dataset_from_batch_output(
             parsed = _build_examples_from_batch_row(row=row)
             logger.info(f"{parsed.custom_id=} {parsed.qa_count=}")
             for example in parsed.examples:
+                qa_examples.append(example)
                 dataset_rows.append(
                     json.dumps(dataclasses.asdict(example), ensure_ascii=False)
                 )
@@ -652,82 +911,21 @@ def build_dataset_from_batch_output(
         lines=dataset_rows,
         overwrite_output=overwrite_output,
     )
-    example_count = len(dataset_rows)
-    logger.info(f"{example_count=} {output_dataset_jsonl_path=}")
-    return example_count
+    logger.info(f"{len(qa_examples)=} {output_dataset_jsonl_path=}")
+    return qa_examples
 
 
-def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Generate OpenAI Batch API JSONL for synthetic numeric SEC QA "
-            "(paragraph + table contexts per filing), or convert batch output "
-            "to dataset JSONL."
-        )
+def build_dataset_from_batch_output(
+    batch_output_jsonl_path: Path,
+    output_dataset_jsonl_path: Path,
+    overwrite_output: bool,
+) -> int:
+    qa_examples = build_qa_examples_from_batch_output(
+        batch_output_jsonl_path=batch_output_jsonl_path,
+        output_dataset_jsonl_path=output_dataset_jsonl_path,
+        overwrite_output=overwrite_output,
     )
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    build_requests_parser = subparsers.add_parser(
-        "build-requests",
-        help="Create JSONL input for OpenAI Batch API.",
-    )
-    build_requests_parser.add_argument(
-        "--sec-root",
-        type=Path,
-        default=Path(SEC_ROOT),
-    )
-    build_requests_parser.add_argument(
-        "--earnings-root",
-        type=Path,
-        default=Path(EARNINGS_ROOT),
-    )
-    build_requests_parser.add_argument(
-        "--output-jsonl-path",
-        type=Path,
-        default=Path(_DEFAULT_BATCH_INPUT_PATH),
-    )
-    build_requests_parser.add_argument(
-        "--model",
-        type=str,
-        default=_DEFAULT_MODEL,
-    )
-    build_requests_parser.add_argument(
-        "--max-paragraph-contexts-per-filing",
-        type=int,
-        default=_DEFAULT_MAX_PARAGRAPH_CONTEXTS_PER_FILING,
-    )
-    build_requests_parser.add_argument(
-        "--max-table-contexts-per-filing",
-        type=int,
-        default=_DEFAULT_MAX_TABLE_CONTEXTS_PER_FILING,
-    )
-    build_requests_parser.add_argument(
-        "--overwrite-output",
-        action="store_true",
-        default=OVERWRITE_OUTPUT,
-    )
-
-    parse_output_parser = subparsers.add_parser(
-        "build-dataset",
-        help="Convert OpenAI Batch output JSONL into synthetic QA dataset JSONL.",
-    )
-    parse_output_parser.add_argument(
-        "--batch-output-jsonl-path",
-        type=Path,
-        default=Path(_DEFAULT_BATCH_OUTPUT_PATH),
-    )
-    parse_output_parser.add_argument(
-        "--output-dataset-jsonl-path",
-        type=Path,
-        default=Path(_DEFAULT_DATASET_OUTPUT_PATH),
-    )
-    parse_output_parser.add_argument(
-        "--overwrite-output",
-        action="store_true",
-        default=OVERWRITE_OUTPUT,
-    )
-
-    return parser.parse_args()
+    return len(qa_examples)
 
 
 def _validate_positive_int(name: str, value: int) -> None:
@@ -735,38 +933,79 @@ def _validate_positive_int(name: str, value: int) -> None:
         raise ValueError(f"Expected positive integer for {name}, but got {value}.")
 
 
+def _cli_build_requests(
+    sec_root: Path = Path(SEC_ROOT),
+    earnings_root: Path = Path(EARNINGS_ROOT),
+    output_jsonl_path: Path = Path(_DEFAULT_BATCH_INPUT_PATH),
+    model: str = _DEFAULT_MODEL,
+    overwrite_output: bool = OVERWRITE_OUTPUT,
+    max_paragraph_contexts_per_filing: int = _DEFAULT_MAX_PARAGRAPH_CONTEXTS_PER_FILING,
+    max_table_contexts_per_filing: int = _DEFAULT_MAX_TABLE_CONTEXTS_PER_FILING,
+    smoke_test: bool = False,
+) -> int:
+    """Create JSONL input for OpenAI Batch API."""
+    _validate_positive_int(
+        name="max_paragraph_contexts_per_filing",
+        value=max_paragraph_contexts_per_filing,
+    )
+    _validate_positive_int(
+        name="max_table_contexts_per_filing",
+        value=max_table_contexts_per_filing,
+    )
+    return build_batch_requests(
+        sec_root=sec_root,
+        earnings_root=earnings_root,
+        output_jsonl_path=output_jsonl_path,
+        model=model,
+        overwrite_output=overwrite_output,
+        max_paragraph_contexts_per_filing=max_paragraph_contexts_per_filing,
+        max_table_contexts_per_filing=max_table_contexts_per_filing,
+        smoke_test=smoke_test,
+    )
+
+
+def _cli_build_dataset(
+    batch_output_jsonl_path: str,
+    output_dataset_jsonl_path: Path = Path(_DEFAULT_DATASET_OUTPUT_PATH),
+    overwrite_output: bool = OVERWRITE_OUTPUT,
+) -> int:
+    """Convert OpenAI Batch output JSONL into synthetic QA dataset JSONL."""
+    return build_dataset_from_batch_output(
+        batch_output_jsonl_path=Path(batch_output_jsonl_path),
+        output_dataset_jsonl_path=output_dataset_jsonl_path,
+        overwrite_output=overwrite_output,
+    )
+
+
+def _cli_submit_batch(
+    input_jsonl_path: str,
+    endpoint: str = _DEFAULT_BATCH_ENDPOINT,
+    completion_window: str = _DEFAULT_COMPLETION_WINDOW,
+    api_base_url: str = _DEFAULT_API_BASE_URL,
+    metadata_json: str = "",
+    output_json_path: Path | None = None,
+) -> str:
+    """Upload a JSONL file and create an OpenAI Batch API job; returns batch id."""
+    created_batch = submit_batch_job(
+        input_jsonl_path=Path(input_jsonl_path),
+        endpoint=endpoint,
+        completion_window=completion_window,
+        api_base_url=api_base_url,
+        metadata_json=metadata_json,
+        output_json_path=output_json_path,
+    )
+    return created_batch.batch_id
+
+
 def main() -> None:
-    args = _parse_args()
-
-    if args.command == "build-requests":
-        _validate_positive_int(
-            name="max_paragraph_contexts_per_filing",
-            value=args.max_paragraph_contexts_per_filing,
-        )
-        _validate_positive_int(
-            name="max_table_contexts_per_filing",
-            value=args.max_table_contexts_per_filing,
-        )
-        build_batch_requests(
-            sec_root=args.sec_root,
-            earnings_root=args.earnings_root,
-            output_jsonl_path=args.output_jsonl_path,
-            model=args.model,
-            overwrite_output=args.overwrite_output,
-            max_paragraph_contexts_per_filing=args.max_paragraph_contexts_per_filing,
-            max_table_contexts_per_filing=args.max_table_contexts_per_filing,
-        )
-        return
-
-    if args.command == "build-dataset":
-        build_dataset_from_batch_output(
-            batch_output_jsonl_path=args.batch_output_jsonl_path,
-            output_dataset_jsonl_path=args.output_dataset_jsonl_path,
-            overwrite_output=args.overwrite_output,
-        )
-        return
-
-    raise ValueError(f"Unknown {args.command=}")
+    fire.Fire(
+        {
+            "build-requests": _cli_build_requests,
+            "build-dataset": _cli_build_dataset,
+            "submit-batch": _cli_submit_batch,
+        },
+        name="openai_batch_synthetic_qa",
+    )
 
 
 if __name__ == "__main__":

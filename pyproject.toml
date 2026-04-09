@@ -27,6 +27,7 @@ dependencies = [
     "vllm>=0.15.0",
     "weasyprint>=68.1",
     "rank-bm25>=0.2.2",
+    "fire>=0.7.1",
 ]
 
 [dependency-groups]
