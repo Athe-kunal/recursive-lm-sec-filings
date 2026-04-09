@@ -1,9 +1,9 @@
-"""Build OpenAI Batch API JSONL requests for numeric synthetic SEC QA generation.
+"""Build OpenAI Batch API JSONL for numeric synthetic SEC / earnings QA.
 
-This script builds OpenAI Batch API request JSONL that asks the model to produce
-structured QA pairs from numeric paragraph and table contexts extracted from SEC
-filings and earnings transcripts. It can also parse batch output JSONL and
-convert it into a training-ready QA dataset JSONL.
+Each line is one POST ``/v1/chat/completions`` request with system and user
+messages containing sampled numeric paragraph and table contexts. The model
+returns structured QA pairs (JSON schema + Pydantic validation). Batch output
+is turned into ``SyntheticQAExample`` JSONL rows.
 """
 
 from __future__ import annotations
@@ -17,37 +17,73 @@ from pathlib import Path
 from typing import Any, NamedTuple
 
 from loguru import logger
+from pydantic import BaseModel, ConfigDict, Field
+from tqdm.auto import tqdm
 
-from mcp_synthetic_qa_server import (
-    EARNINGS_ROOT,
-    MAX_QUESTIONS_PER_FILING_TYPE,
-    MIN_QUESTIONS_PER_FILING_TYPE,
-    OVERWRITE_OUTPUT,
-    RANDOM_SEED,
-    SEC_ROOT,
-    _FilingRecord,
-    _collect_records,
-    _extract_content_after_first_page,
-    _extract_markdown_tables,
-    _extract_paragraphs,
-    _has_financial_scale_context,
-    _is_toc_style_markdown_table,
-    _normalize_whitespace,
-)
-
+_ALLOWED_SEC_FILING_TYPES = {
+    "10-K",
+    "10-Q1",
+    "10-Q2",
+    "10-Q3",
+    "10-Q4",
+    "8-K",
+    "DEF 14A",
+}
+_ALLOWED_TRANSCRIPT_FILING_TYPES = {"Q1", "Q2", "Q3", "Q4"}
 _DEFAULT_MODEL = "gpt-4.1-mini"
 _DEFAULT_BATCH_INPUT_PATH = "openai_batch_synthetic_qa_requests.jsonl"
 _DEFAULT_BATCH_OUTPUT_PATH = "openai_batch_synthetic_qa_output.jsonl"
 _DEFAULT_DATASET_OUTPUT_PATH = "synthetic_qa_dataset_from_batch.jsonl"
 _DEFAULT_MAX_PARAGRAPH_CONTEXTS_PER_FILING = 2
 _DEFAULT_MAX_TABLE_CONTEXTS_PER_FILING = 2
+_FINANCIAL_SCALE_CONTEXT_PATTERN = re.compile(
+    r"%|\b(?:millions?|billions?)\b", re.IGNORECASE
+)
+_NUMERIC_TOKEN_PATTERN = re.compile(
+    r"(?<![A-Za-z])(?:\$?\d[\d,]*(?:\.\d+)?%?)(?![A-Za-z])"
+)
+_PAGE_SPLIT_PATTERN = re.compile(
+    r"\n\s*(?:---\s*)?page\s+\d+\s*(?:---\s*)?\n", re.IGNORECASE
+)
+_PARAGRAPH_SPLIT_PATTERN = re.compile(r"\n\s*\n")
+_TABLE_BLOCK_PATTERN = re.compile(r"<table[\s\S]*?</table>", re.IGNORECASE)
+_ROW_PATTERN = re.compile(r"<tr[\s\S]*?</tr>", re.IGNORECASE)
+_CELL_PATTERN = re.compile(r"<(?:td|th)[^>]*>([\s\S]*?)</(?:td|th)>", re.IGNORECASE)
+_TAG_PATTERN = re.compile(r"<[^>]+>")
+_FINANCIAL_SCALE_CONTEXT_PATTERN = re.compile(
+    r"%|\b(?:millions?|billions?)\b", re.IGNORECASE
+)
+_TOC_ITEM_MARKER_PATTERN = re.compile(r"Item\s+\d+[A-Z]{0,2}\.", re.IGNORECASE)
 
-_NUMERIC_TOKEN_PATTERN = re.compile(r"(?<![A-Za-z])(?:\$?\d[\d,]*(?:\.\d+)?%?)(?![A-Za-z])")
+SEC_ROOT = "localworkspace/markdown/sec_data"
+EARNINGS_ROOT = "earnings_transcripts_data"
+RANDOM_SEED = 42
+OVERWRITE_OUTPUT = True
 
-_SYNTHETIC_QA_RESPONSE_SCHEMA: dict[str, Any] = {
-    "name": "synthetic_qa_pairs",
-    "strict": True,
-    "schema": {
+_CONTEXT_HEADER = "Numeric contexts:"
+
+
+class BatchSyntheticQAPair(BaseModel):
+    """One question/answer pair from the model (matches batch JSON schema)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    question: str
+    answer: str
+
+
+class BatchSyntheticQAResponse(BaseModel):
+    """Root object returned under structured output for each batch line."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    qas: list[BatchSyntheticQAPair] = Field(min_length=1, max_length=3)
+
+
+def _batch_response_json_schema() -> dict[str, Any]:
+    """JSON Schema for OpenAI ``json_schema`` format (strict, no ``$ref``)."""
+
+    return {
         "type": "object",
         "properties": {
             "qas": {
@@ -67,8 +103,7 @@ _SYNTHETIC_QA_RESPONSE_SCHEMA: dict[str, Any] = {
         },
         "required": ["qas"],
         "additionalProperties": False,
-    },
-}
+    }
 
 
 @dataclasses.dataclass(slots=True)
@@ -93,7 +128,6 @@ class _ParsedCustomID(NamedTuple):
     ticker: str
     year: str
     filing_type: str
-    context_type: str
 
 
 class _ParsedBatchRow(NamedTuple):
@@ -102,123 +136,180 @@ class _ParsedBatchRow(NamedTuple):
     qa_count: int
 
 
-class _NumericContextSelection(NamedTuple):
-    paragraph_contexts: list[str]
-    table_contexts: list[str]
+class _FilingRecord(NamedTuple):
+    file_path: Path
+    ticker_or_company_name: str
+    year: str
+    filing_type: str
+    data_source: str
 
 
 def _build_system_prompt() -> str:
     return (
-        "You generate synthetic financial QA pairs from SEC filings and earnings "
-        "transcripts. Use only facts in the provided context. Keep numbers exact. "
+        "You generate synthetic financial question-answer pairs from SEC filings "
+        "and earnings transcripts. Given the provided text, formulate 1 to 3 "
+        "questions and answers that are directly supported by the context. Look "
+        "at the provided metadata such as company identifier, reporting year, and "
+        "document type, and use it as subtle context so the questions feel "
+        "grounded in the document, but do not overemphasize or restate the hint "
+        "unless it is natural. Questions can be numeric or briefly descriptive. "
+        "Use only facts in the provided contexts. Keep numbers exact when used. "
         "Do not invent values. Return only JSON matching the schema."
     )
 
 
-def _build_user_prompt(record: _FilingRecord, context: str, context_type: str) -> str:
-    prompt = (
-        "Generate 1 to 3 QA pairs from this context.\n"
-        f"ticker_or_company_name={record.ticker_or_company_name}\n"
-        f"year={record.year}\n"
-        f"filing_type={record.filing_type}\n"
-        f"context_type={context_type}\n"
-        "Each question should be answerable directly from the context and should "
-        "focus on numeric facts.\n"
-        "Context:\n"
-        f"{context}"
-    )
-    return prompt
+def _document_type_hint(filing_type: str) -> str:
+    subtle_descriptions = {
+        "10-K": "an annual filing",
+        "10-Q1": "an early-quarter filing",
+        "10-Q2": "a mid-year quarter filing",
+        "10-Q3": "a late-year quarter filing",
+        "10-Q4": "a year-end quarter filing",
+        "8-K": "a current-event filing",
+        "DEF 14A": "a proxy filing",
+        "Q1": "a first-quarter earnings call transcript",
+        "Q2": "a second-quarter earnings call transcript",
+        "Q3": "a third-quarter earnings call transcript",
+        "Q4": "a fourth-quarter earnings call transcript",
+    }
+    return subtle_descriptions.get(filing_type, "a company financial document")
 
 
-def _build_custom_id(record: _FilingRecord, context_type: str, sample_idx: int) -> str:
+def _build_user_prompt(
+    record: _FilingRecord,
+    paragraph_contexts: list[str],
+    table_contexts: list[str],
+) -> str:
+    document_type_hint = _document_type_hint(filing_type=record.filing_type)
+    lines: list[str] = [
+        "Generate 1 to 3 question-answer pairs from the numeric contexts below.",
+        (
+            "Task: given the text, formulate questions and answers that are "
+            "directly supported by the provided context."
+        ),
+        (
+            f"Company identifier: {record.ticker_or_company_name}. "
+            f"Reporting year: {record.year}. "
+            f"Document type: {record.filing_type} ({document_type_hint})."
+        ),
+        (
+            "Each question must be answerable directly from the contexts and "
+            "may focus on either numeric facts or brief descriptive facts."
+        ),
+        "Keep the wording natural, concise, and specific.",
+        "",
+        _CONTEXT_HEADER,
+        "",
+    ]
+    if paragraph_contexts:
+        lines.append("## Paragraphs")
+        for index, paragraph in enumerate(paragraph_contexts, start=1):
+            lines.extend([f"### Paragraph {index}", paragraph, ""])
+    if table_contexts:
+        lines.append("## Tables")
+        for index, table in enumerate(table_contexts, start=1):
+            lines.extend([f"### Table {index}", table, ""])
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _build_custom_id(record: _FilingRecord) -> str:
     return (
         f"ticker={record.ticker_or_company_name}|year={record.year}|"
-        f"filing_type={record.filing_type}|context_type={context_type}|sample_idx={sample_idx}"
+        f"filing_type={record.filing_type}"
     )
 
 
-def _build_request_payload(
-    record: _FilingRecord,
-    context: str,
-    context_type: str,
-    sample_idx: int,
-    model: str,
-) -> _RequestPayload:
-    custom_id = _build_custom_id(
-        record=record,
-        context_type=context_type,
-        sample_idx=sample_idx,
-    )
-    body = {
-        "model": model,
-        "input": [
-            {
-                "role": "system",
-                "content": [{"type": "input_text", "text": _build_system_prompt()}],
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": _build_user_prompt(
-                            record=record,
-                            context=context,
-                            context_type=context_type,
-                        ),
-                    }
-                ],
-            },
-        ],
-        "text": {
-            "format": {
-                "type": "json_schema",
-                "name": _SYNTHETIC_QA_RESPONSE_SCHEMA["name"],
-                "schema": _SYNTHETIC_QA_RESPONSE_SCHEMA["schema"],
-                "strict": _SYNTHETIC_QA_RESPONSE_SCHEMA["strict"],
-            }
-        },
-    }
-    payload = _RequestPayload(custom_id=custom_id, body=body)
-    return payload
+def _has_financial_scale_context(text: str) -> bool:
+    return _FINANCIAL_SCALE_CONTEXT_PATTERN.search(text) is not None
 
 
-def _request_row(payload: _RequestPayload) -> dict[str, Any]:
-    row = {
-        "custom_id": payload.custom_id,
-        "method": "POST",
-        "url": "/v1/responses",
-        "body": payload.body,
-    }
-    return row
+def _is_toc_style_markdown_table(table: str) -> bool:
+    item_markers = _TOC_ITEM_MARKER_PATTERN.findall(table)
+    if len(item_markers) >= 3:
+        return True
+    lines = table.split("\n")
+    if not lines:
+        return False
+    first_line_lower = lines[0].lower()
+    if "page" in first_line_lower and "part " in first_line_lower:
+        return True
+    return False
 
 
-def _serialize_jsonl_row(row: dict[str, Any]) -> str:
-    return json.dumps(row, ensure_ascii=False)
+def _normalize_whitespace(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
 
 
-def _write_jsonl_lines(output_path: Path, lines: list[str], overwrite_output: bool) -> None:
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    mode = "w" if overwrite_output else "a"
-    with output_path.open(mode, encoding="utf-8") as file_obj:
-        for line in lines:
-            file_obj.write(line + "\n")
+def _strip_html(text: str) -> str:
+    no_tags = re.sub(_TAG_PATTERN, " ", text)
+    return _normalize_whitespace(no_tags)
+
+
+def _extract_content_after_first_page(markdown_text: str) -> str:
+    pages = re.split(_PAGE_SPLIT_PATTERN, markdown_text)
+    if len(pages) <= 1:
+        return markdown_text
+    return "\n".join(pages[1:])
+
+
+def _extract_paragraphs(markdown_text: str) -> list[str]:
+    blocks = _PARAGRAPH_SPLIT_PATTERN.split(markdown_text)
+    paragraphs: list[str] = []
+    for block in blocks:
+        cleaned = _strip_html(block)
+        if len(cleaned) < 120:
+            continue
+        if "table" in block.lower():
+            continue
+        paragraphs.append(cleaned)
+    return paragraphs
+
+
+def _to_markdown_row(cells: list[str]) -> str:
+    escaped_cells = [cell.replace("|", "\\|") for cell in cells]
+    return "| " + " | ".join(escaped_cells) + " |"
+
+
+def _html_table_to_markdown(table_html: str) -> str | None:
+    row_matches = re.findall(_ROW_PATTERN, table_html)
+    rows: list[list[str]] = []
+    for row_html in row_matches:
+        cell_matches = re.findall(_CELL_PATTERN, row_html)
+        normalized_cells = [_strip_html(cell) for cell in cell_matches]
+        normalized_cells = [cell for cell in normalized_cells if cell]
+        if not normalized_cells:
+            continue
+        rows.append(normalized_cells)
+
+    if len(rows) < 2:
+        return None
+
+    header = rows[0]
+    markdown_lines = [_to_markdown_row(header)]
+    markdown_lines.append(_to_markdown_row(["---"] * len(header)))
+    for row in rows[1:]:
+        padded_row = row + [""] * max(0, len(header) - len(row))
+        markdown_lines.append(_to_markdown_row(padded_row[: len(header)]))
+    return "\n".join(markdown_lines)
+
+
+def _extract_markdown_tables(markdown_text: str) -> list[str]:
+    html_tables = re.findall(_TABLE_BLOCK_PATTERN, markdown_text)
+    markdown_tables: list[str] = []
+    for html_table in html_tables:
+        markdown_table = _html_table_to_markdown(html_table)
+        if markdown_table is None:
+            continue
+        markdown_tables.append(markdown_table)
+    return markdown_tables
 
 
 def _has_numeric_tokens(text: str) -> bool:
     return _NUMERIC_TOKEN_PATTERN.search(text) is not None
 
 
-def _is_numeric_paragraph(paragraph: str) -> bool:
-    has_numeric_tokens = _has_numeric_tokens(paragraph)
-    has_scale_terms = _has_financial_scale_context(paragraph)
-    return has_numeric_tokens or has_scale_terms
-
-
-def _is_numeric_table(markdown_table: str) -> bool:
-    has_numeric_tokens = _has_numeric_tokens(markdown_table)
-    has_scale_terms = _has_financial_scale_context(markdown_table)
-    return has_numeric_tokens or has_scale_terms
+def _is_numeric_text(text: str) -> bool:
+    return _has_numeric_tokens(text) or _has_financial_scale_context(text)
 
 
 def _sample_contexts(
@@ -230,8 +321,7 @@ def _sample_contexts(
         return []
     if len(contexts) <= max_contexts:
         return contexts
-    sampled_contexts = randomizer.sample(contexts, k=max_contexts)
-    return sampled_contexts
+    return randomizer.sample(contexts, k=max_contexts)
 
 
 def _select_numeric_contexts(
@@ -239,62 +329,123 @@ def _select_numeric_contexts(
     randomizer: random.Random,
     max_paragraph_contexts: int,
     max_table_contexts: int,
-) -> _NumericContextSelection:
+) -> tuple[list[str], list[str]]:
     content = _extract_content_after_first_page(markdown_text)
 
     paragraphs = _extract_paragraphs(content)
-    numeric_paragraphs = [
-        paragraph for paragraph in paragraphs if _is_numeric_paragraph(paragraph)
-    ]
+    numeric_paragraphs = [p for p in paragraphs if _is_numeric_text(p)]
 
     tables = _extract_markdown_tables(content)
-    non_toc_tables = [table for table in tables if not _is_toc_style_markdown_table(table)]
-    numeric_tables = [table for table in non_toc_tables if _is_numeric_table(table)]
+    non_toc_tables = [t for t in tables if not _is_toc_style_markdown_table(t)]
+    numeric_tables = [t for t in non_toc_tables if _is_numeric_text(t)]
 
     sampled_paragraphs = _sample_contexts(
-        contexts=numeric_paragraphs,
-        max_contexts=max_paragraph_contexts,
-        randomizer=randomizer,
+        numeric_paragraphs, max_paragraph_contexts, randomizer
     )
-    sampled_tables = _sample_contexts(
-        contexts=numeric_tables,
-        max_contexts=max_table_contexts,
-        randomizer=randomizer,
-    )
-
-    logger.info(
-        f"{len(paragraphs)=} {len(numeric_paragraphs)=} "
-        f"{len(tables)=} {len(non_toc_tables)=} {len(numeric_tables)=} "
-        f"{len(sampled_paragraphs)=} {len(sampled_tables)=}"
-    )
-
-    selection = _NumericContextSelection(
-        paragraph_contexts=sampled_paragraphs,
-        table_contexts=sampled_tables,
-    )
-    return selection
+    sampled_tables = _sample_contexts(numeric_tables, max_table_contexts, randomizer)
+    return sampled_paragraphs, sampled_tables
 
 
-def _build_request_rows_for_contexts(
+def _parse_sec_record(file_path: Path) -> _FilingRecord | None:
+    parent_name = file_path.parent.name
+    if "-" not in parent_name:
+        return None
+    ticker, year = parent_name.rsplit("-", maxsplit=1)
+    filing_type = file_path.stem
+    if filing_type not in _ALLOWED_SEC_FILING_TYPES:
+        return None
+    return _FilingRecord(
+        file_path=file_path,
+        ticker_or_company_name=ticker,
+        year=year,
+        filing_type=filing_type,
+        data_source="generated_sec_data_markdown",
+    )
+
+
+def _parse_transcript_record(file_path: Path) -> _FilingRecord | None:
+    if len(file_path.parts) < 3:
+        return None
+    ticker = file_path.parents[1].name
+    year = file_path.parent.name
+    quarter = file_path.stem.split("_")[0]
+    if quarter not in _ALLOWED_TRANSCRIPT_FILING_TYPES:
+        return None
+    return _FilingRecord(
+        file_path=file_path,
+        ticker_or_company_name=ticker,
+        year=year,
+        filing_type=quarter,
+        data_source="generated_earnings_data_markdown",
+    )
+
+
+def _collect_records(sec_root: Path, earnings_root: Path) -> list[_FilingRecord]:
+    records: list[_FilingRecord] = []
+    for file_path in sorted(sec_root.glob("*/*.md")):
+        record = _parse_sec_record(file_path)
+        if record is not None:
+            records.append(record)
+    for file_path in sorted(earnings_root.glob("*/*/Q*.md")):
+        record = _parse_transcript_record(file_path)
+        if record is not None:
+            records.append(record)
+    logger.info(f"{sec_root=} {earnings_root=} {len(records)=}")
+    return records
+
+
+def _build_request_payload(
     record: _FilingRecord,
-    contexts: list[str],
-    context_type: str,
-    question_count: int,
+    paragraph_contexts: list[str],
+    table_contexts: list[str],
     model: str,
-) -> list[str]:
-    serialized_rows: list[str] = []
-    for context_index, context in enumerate(contexts):
-        for sample_idx in range(question_count):
-            payload = _build_request_payload(
-                record=record,
-                context=context,
-                context_type=context_type,
-                sample_idx=(context_index * question_count) + sample_idx,
-                model=model,
-            )
-            row = _request_row(payload=payload)
-            serialized_rows.append(_serialize_jsonl_row(row))
-    return serialized_rows
+) -> _RequestPayload:
+    custom_id = _build_custom_id(record=record)
+    body = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": _build_system_prompt(),
+            },
+            {
+                "role": "user",
+                "content": _build_user_prompt(
+                    record=record,
+                    paragraph_contexts=paragraph_contexts,
+                    table_contexts=table_contexts,
+                ),
+            },
+        ],
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "synthetic_qa_pairs",
+                "schema": _batch_response_json_schema(),
+                "strict": True,
+            },
+        },
+    }
+    return _RequestPayload(custom_id=custom_id, body=body)
+
+
+def _request_row(payload: _RequestPayload) -> dict[str, Any]:
+    return {
+        "custom_id": payload.custom_id,
+        "method": "POST",
+        "url": "/v1/chat/completions",
+        "body": payload.body,
+    }
+
+
+def _write_jsonl_lines(
+    output_path: Path, lines: list[str], overwrite_output: bool
+) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    mode = "w" if overwrite_output else "a"
+    with output_path.open(mode, encoding="utf-8") as file_obj:
+        for line in lines:
+            file_obj.write(line + "\n")
 
 
 def build_batch_requests(
@@ -310,41 +461,44 @@ def build_batch_requests(
     records = _collect_records(sec_root=sec_root, earnings_root=earnings_root)
 
     serialized_rows: list[str] = []
-    for record in records:
-        markdown_text = record.file_path.read_text(encoding="utf-8", errors="ignore")
-        context_selection = _select_numeric_contexts(
-            markdown_text=markdown_text,
-            randomizer=randomizer,
-            max_paragraph_contexts=max_paragraph_contexts_per_filing,
-            max_table_contexts=max_table_contexts_per_filing,
-        )
-        question_count = randomizer.randint(
-            MIN_QUESTIONS_PER_FILING_TYPE,
-            MAX_QUESTIONS_PER_FILING_TYPE,
-        )
+    with tqdm(
+        records,
+        desc="Building batch requests",
+        unit="filing",
+    ) as progress:
+        for record in progress:
+            markdown_text = record.file_path.read_text(
+                encoding="utf-8", errors="ignore"
+            )
+            paragraph_contexts, table_contexts = _select_numeric_contexts(
+                markdown_text=markdown_text,
+                randomizer=randomizer,
+                max_paragraph_contexts=max_paragraph_contexts_per_filing,
+                max_table_contexts=max_table_contexts_per_filing,
+            )
+            if not paragraph_contexts and not table_contexts:
+                tqdm.write(
+                    f"skip {record.file_path=} "
+                    f"(no numeric paragraph or table contexts)"
+                )
+                progress.set_postfix_str("skipped", refresh=True)
+                continue
 
-        logger.info(
-            f"{record.file_path=} {question_count=} "
-            f"{len(context_selection.paragraph_contexts)=} "
-            f"{len(context_selection.table_contexts)=}"
-        )
-
-        paragraph_rows = _build_request_rows_for_contexts(
-            record=record,
-            contexts=context_selection.paragraph_contexts,
-            context_type="paragraph",
-            question_count=question_count,
-            model=model,
-        )
-        table_rows = _build_request_rows_for_contexts(
-            record=record,
-            contexts=context_selection.table_contexts,
-            context_type="table",
-            question_count=question_count,
-            model=model,
-        )
-        serialized_rows.extend(paragraph_rows)
-        serialized_rows.extend(table_rows)
+            payload = _build_request_payload(
+                record=record,
+                paragraph_contexts=paragraph_contexts,
+                table_contexts=table_contexts,
+                model=model,
+            )
+            serialized_rows.append(
+                json.dumps(_request_row(payload), ensure_ascii=False)
+            )
+            progress.set_postfix(
+                p=len(paragraph_contexts),
+                t=len(table_contexts),
+                file=record.file_path.name,
+                refresh=True,
+            )
 
     _write_jsonl_lines(
         output_path=output_jsonl_path,
@@ -359,6 +513,20 @@ def build_batch_requests(
 def _extract_response_text(row: dict[str, Any]) -> str:
     response = row.get("response", {})
     body = response.get("body", {})
+
+    choices = body.get("choices", [])
+    for choice in choices:
+        message = choice.get("message", {})
+        content = message.get("content")
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            for item in content:
+                if not isinstance(item, dict):
+                    continue
+                text_value = item.get("text")
+                if isinstance(text_value, str):
+                    return text_value
 
     output_text = body.get("output_text")
     if isinstance(output_text, str):
@@ -382,73 +550,82 @@ def _parse_custom_id(custom_id: str) -> _ParsedCustomID:
         key, value = pair.split("=", maxsplit=1)
         values[key] = value
 
-    parsed = _ParsedCustomID(
+    return _ParsedCustomID(
         ticker=values["ticker"],
         year=values["year"],
         filing_type=values["filing_type"],
-        context_type=values["context_type"],
     )
-    return parsed
 
 
-def _parse_qas_from_response_text(text: str) -> list[dict[str, str]]:
-    data = json.loads(text)
-    qas = data["qas"]
-    if not isinstance(qas, list):
-        raise ValueError("The model response 'qas' field must be a list.")
-    return qas
+def _parse_qas_from_response_text(text: str) -> list[BatchSyntheticQAPair]:
+    parsed = BatchSyntheticQAResponse.model_validate_json(text)
+    return list(parsed.qas)
 
 
 def _extract_context_from_request_body(request_body: dict[str, Any]) -> str:
-    user_input = request_body.get("input", [])
-    if len(user_input) <= 1:
+    messages = request_body.get("messages", [])
+    if len(messages) <= 1:
         return ""
 
-    content_items = user_input[1].get("content", [])
-    if not content_items:
-        return ""
+    user_message = messages[1]
+    prompt_content = user_message.get("content", "")
+    if isinstance(prompt_content, list):
+        if not prompt_content:
+            return ""
+        prompt_text = str(prompt_content[0].get("text", ""))
+    else:
+        prompt_text = str(prompt_content)
 
-    prompt_text = str(content_items[0].get("text", ""))
-    marker = "Context:\n"
-    marker_index = prompt_text.find(marker)
+    if not prompt_text:
+        return ""
+    marker_index = prompt_text.find(_CONTEXT_HEADER)
     if marker_index < 0:
-        return prompt_text
+        return prompt_text.strip()
 
-    context = prompt_text[marker_index + len(marker) :]
-    return context.strip()
+    after_header = prompt_text[marker_index + len(_CONTEXT_HEADER) :].lstrip("\n")
+    return after_header.strip()
 
 
 def _build_examples_from_batch_row(row: dict[str, Any]) -> _ParsedBatchRow:
     custom_id = str(row["custom_id"])
-    custom_id_fields = _parse_custom_id(custom_id=custom_id)
+    meta = _parse_custom_id(custom_id=custom_id)
     response_text = _extract_response_text(row=row)
     qas = _parse_qas_from_response_text(text=response_text)
 
     request_body = row.get("request", {}).get("body", {})
     context = _extract_context_from_request_body(request_body=request_body)
 
+    has_paragraph = "### Paragraph " in context
+    has_table = "### Table " in context
+    if has_paragraph and has_table:
+        context_type = "paragraph_and_table"
+    elif has_paragraph:
+        context_type = "paragraph_only"
+    else:
+        context_type = "table_only"
+
     examples: list[SyntheticQAExample] = []
     for qa in qas:
-        question = _normalize_whitespace(str(qa["question"]))
-        answer = _normalize_whitespace(str(qa["answer"]))
-        example = SyntheticQAExample(
-            question=question,
-            answer=answer,
-            context=context,
-            context_type=custom_id_fields.context_type,
-            year=custom_id_fields.year,
-            ticker_or_company_name=custom_id_fields.ticker,
-            filing_type=custom_id_fields.filing_type,
-            data_source="openai_batch_generated",
+        question = _normalize_whitespace(qa.question)
+        answer = _normalize_whitespace(qa.answer)
+        examples.append(
+            SyntheticQAExample(
+                question=question,
+                answer=answer,
+                context=context,
+                context_type=context_type,
+                year=meta.year,
+                ticker_or_company_name=meta.ticker,
+                filing_type=meta.filing_type,
+                data_source="generated_openai_batch_synthetic_qa",
+            )
         )
-        examples.append(example)
 
-    parsed_batch_row = _ParsedBatchRow(
+    return _ParsedBatchRow(
         examples=examples,
         custom_id=custom_id,
         qa_count=len(examples),
     )
-    return parsed_batch_row
 
 
 def build_dataset_from_batch_output(
@@ -483,8 +660,9 @@ def build_dataset_from_batch_output(
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Generate OpenAI Batch API JSONL requests for synthetic numeric SEC QA, "
-            "or parse batch output into dataset JSONL."
+            "Generate OpenAI Batch API JSONL for synthetic numeric SEC QA "
+            "(paragraph + table contexts per filing), or convert batch output "
+            "to dataset JSONL."
         )
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -531,7 +709,7 @@ def _parse_args() -> argparse.Namespace:
 
     parse_output_parser = subparsers.add_parser(
         "build-dataset",
-        help="Convert downloaded OpenAI Batch output JSONL into synthetic QA dataset JSONL.",
+        help="Convert OpenAI Batch output JSONL into synthetic QA dataset JSONL.",
     )
     parse_output_parser.add_argument(
         "--batch-output-jsonl-path",
@@ -549,8 +727,7 @@ def _parse_args() -> argparse.Namespace:
         default=OVERWRITE_OUTPUT,
     )
 
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 def _validate_positive_int(name: str, value: int) -> None:
@@ -560,7 +737,6 @@ def _validate_positive_int(name: str, value: int) -> None:
 
 def main() -> None:
     args = _parse_args()
-    logger.info(f"{args=}")
 
     if args.command == "build-requests":
         _validate_positive_int(
