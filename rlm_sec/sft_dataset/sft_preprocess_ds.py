@@ -15,6 +15,7 @@ from rlm_sec.sft_dataset.rollout_generation import (
 )
 
 _DEFAULT_TRAIN_PATH = "data/train.parquet"
+_DEFAULT_VALIDATION_PATH = "data/validation.parquet"
 _DEFAULT_TRAIN_QA_N = 1396
 _DEFAULT_TRAIN_RANKING_N = 1002
 _QA_TASK = "qa"

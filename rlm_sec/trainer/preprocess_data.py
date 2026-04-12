@@ -85,22 +85,65 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--output_dir", type=str, default="data")
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--test_size", type=float, default=0.1)
+    parser.add_argument("--test_size", type=float, default=0.2)
     parser.add_argument(
         "--finance_agent_bench_file",
         type=str,
         default="document_ranking_kaggle_dev.jsonl",
+    )
+    parser.add_argument(
+        "--rephrased_qa_jsonl",
+        type=str,
+        default="data/rephrased_out.jsonl",
+        help="JSONL of rephrased QA rows (cast to QAExample) for merge mode.",
+    )
+    parser.add_argument(
+        "--merge_rephrased_with_parquet_splits",
+        action="store_true",
+        help=(
+            "If set, load rephrased JSONL + a fraction of existing train.parquet + full "
+            "validation.parquet from output_dir, concatenate, then train_test_split."
+        ),
+    )
+    parser.add_argument(
+        "--train_subsample_fraction",
+        type=float,
+        default=0.5,
+        help="Fraction of existing train.parquet rows to include when merging (default half).",
     )
 
     args = parser.parse_args()
     args.output_dir = os.path.expanduser(args.output_dir)
     os.makedirs(args.output_dir, exist_ok=True)
 
-    combined = build_combined_dataset(args.finance_agent_bench_file)
-    save_split(
-        dataset=combined,
-        train_path=os.path.join(args.output_dir, "train.parquet"),
-        val_path=os.path.join(args.output_dir, "validation.parquet"),
-        test_size=args.test_size,
-        seed=args.seed,
-    )
+    train_path = os.path.join(args.output_dir, "train.parquet")
+    val_path = os.path.join(args.output_dir, "validation.parquet")
+
+    if args.merge_rephrased_with_parquet_splits:
+        merged = hf_dataloader.build_merged_dataset_from_rephrased_and_parquet(
+            rephrased_jsonl=args.rephrased_qa_jsonl,
+            train_parquet=train_path,
+            validation_parquet=val_path,
+            train_subsample_fraction=args.train_subsample_fraction,
+            seed=args.seed,
+        )
+        logger.info(
+            f"Merged rephrased + train fraction + val: {len(merged)=} "
+            f"(rephrased jsonl={args.rephrased_qa_jsonl})"
+        )
+        save_split(
+            dataset=merged,
+            train_path=train_path,
+            val_path=val_path,
+            test_size=args.test_size,
+            seed=args.seed,
+        )
+    else:
+        combined = build_combined_dataset(args.finance_agent_bench_file)
+        save_split(
+            dataset=combined,
+            train_path=train_path,
+            val_path=val_path,
+            test_size=args.test_size,
+            seed=args.seed,
+        )

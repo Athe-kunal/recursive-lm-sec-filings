@@ -1,10 +1,12 @@
 import functools
 import hashlib
+import json
 import logging
 import os
 import re
 import random
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
+from pathlib import Path
 
 from datasets import (
     Dataset,
@@ -141,6 +143,74 @@ QA_FEATURES = Features(
         "task_type": Value("string"),
     }
 )
+
+def qa_example_from_rephrased_jsonl_row(row: dict) -> QAExample:
+    """Build a ``QAExample`` from a JSONL object (extra keys such as rephrased metadata ignored)."""
+    field_names = {f.name for f in fields(QAExample)}
+    missing = field_names - row.keys()
+    if missing:
+        raise ValueError(f"JSONL row missing QAExample fields {sorted(missing)}")
+    return QAExample(**{name: row[name] for name in field_names})
+
+
+def unified_training_row_from_qa_example(example: QAExample) -> dict:
+    """Project a QA example to the same dict shape as ``preprocess_data.make_qa_map_fn`` output."""
+    data = asdict(example)
+    return {
+        "data_source": data["data_source"],
+        "prompt": data["prompt"],
+        "env_class": "null",
+        "task_type": data["task_type"],
+        "answer": data["answer"],
+        "context": data["context"],
+        "year": data["year"],
+        "ticker_or_company_name": data["ticker_or_company_name"],
+        "filing_type": data["filing_type"],
+        "relevant": [],
+        "not_relevant": [],
+    }
+
+
+def load_rephrased_qa_jsonl_as_unified_dataset(jsonl_path: str) -> Dataset:
+    """Load ``rephrased_out``-style JSONL rows, cast each to ``QAExample``, return a unified QA dataset."""
+    path = Path(jsonl_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"Rephrased QA JSONL not found: {path}")
+    rows: list[dict] = []
+    with path.open(encoding="utf-8") as infile:
+        for line in infile:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            raw = json.loads(stripped)
+            example = qa_example_from_rephrased_jsonl_row(raw)
+            rows.append(unified_training_row_from_qa_example(example))
+    return Dataset.from_list(rows)
+
+
+def build_merged_dataset_from_rephrased_and_parquet(
+    rephrased_jsonl: str,
+    train_parquet: str,
+    validation_parquet: str,
+    *,
+    train_subsample_fraction: float = 0.5,
+    seed: int,
+) -> Dataset:
+    """Concatenate rephrased QA JSONL with a shuffled fraction of train rows and all validation rows.
+
+    ``train_subsample_fraction`` applies to the existing train parquet row count (e.g. ``0.5`` is half).
+    """
+    reph_ds = load_rephrased_qa_jsonl_as_unified_dataset(rephrased_jsonl)
+    train_full = load_dataset("parquet", data_files=train_parquet)["train"]
+    val_full = load_dataset("parquet", data_files=validation_parquet)["train"]
+    fraction = min(1.0, max(0.0, train_subsample_fraction))
+    if len(train_full) == 0:
+        train_sub = train_full
+    else:
+        n_sub = max(1, int(len(train_full) * fraction))
+        n_sub = min(n_sub, len(train_full))
+        train_sub = train_full.shuffle(seed=seed).select(range(n_sub))
+    return concatenate_datasets([reph_ds, train_sub, val_full])
 
 
 def extract_year_from_filing(filing: str) -> str:
