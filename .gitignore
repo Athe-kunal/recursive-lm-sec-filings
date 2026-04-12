@@ -219,3 +219,5 @@ chroma_db/
 # earnings_transcripts_data/
 
 notebooks/
+
+*.txt

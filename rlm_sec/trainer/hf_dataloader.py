@@ -22,6 +22,28 @@ import yfinance as yf
 
 logger = logging.getLogger(__name__)
 
+BAD_DATA = [
+    35,
+    132,
+    279,
+    99,
+    2,
+    19,
+    272,
+    11,
+    12,
+    77,
+    110,
+    250,
+    35,
+    43,
+    85,
+    253,
+    280,
+    301,
+    178,
+]
+
 
 def get_company_name(ticker: str) -> str | None:
     yf_ticker = yf.Ticker(ticker)
@@ -143,6 +165,7 @@ QA_FEATURES = Features(
         "task_type": Value("string"),
     }
 )
+
 
 def qa_example_from_rephrased_jsonl_row(row: dict) -> QAExample:
     """Build a ``QAExample`` from a JSONL object (extra keys such as rephrased metadata ignored)."""

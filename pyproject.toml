@@ -36,6 +36,7 @@ synthetic-data-gen = [
 ]
 dev = [
     "pytest>=9.0.2",
+    "streamlit>=1.45.0",
 ]
 ocr-md = [
     "olmocr>=0.4.27",
