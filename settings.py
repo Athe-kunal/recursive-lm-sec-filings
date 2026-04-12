@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class EnvSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     # FastAPI server URL
-    server_url: str = "http://127.0.0.1:8888"
+    server_url: str = "http://127.0.0.1:8889"
 
 
 env_settings = EnvSettings()

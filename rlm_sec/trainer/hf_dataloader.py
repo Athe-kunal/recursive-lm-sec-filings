@@ -22,26 +22,77 @@ import yfinance as yf
 
 logger = logging.getLogger(__name__)
 
-BAD_DATA = [
-    35,
-    132,
-    279,
-    99,
-    2,
-    19,
-    272,
-    11,
-    12,
-    77,
-    110,
-    250,
-    35,
-    43,
+train_bad_idxs = [
+    19,  # Q/A mismatch (2022 vs 2021)
+    41,  # Q4 question but full-year answer
+    42,  # "Company F" → undefined entity
+    64,  # Missing units (no $ / million)
+    69,  # "amazing performance" → non-analytical / vague
+    83,  # "two of the primes" → meaningless answer
+    108,  # No company specified
+    120,  # Missing units ($155,554 unclear)
+    126,  # Vague "8–10%" across multiple metrics
+    132,  # No company / context
+    146,  # Q4 vs full-year mismatch
+    184,  # Too vague ("pressure and headwinds")
+    196,  # Vague qualitative guidance
+    215,  # "low single digits" → weak signal
+    218,  # Aspirational, not factual
+    226,  # No company / unclear scope
+    272,  # Q3 vs Q4 mismatch
+    277,  # Vague "challenges"
+    301,  # Q4 vs Q1 mismatch
+    308,  # No company specified
+    318,  # Trivia (Postman ranking)
+    355,  # Regulatory trivia
+    473,  # "XYZ" undefined company
+    602,  # "XYZ" undefined company
+    656,  # Not a financial question
+    727,  # Future date (Oct 2025)
+    756,  # Future date (FY2025)
+    857,  # Future date (Mar 2025) / no company
+    947,  # "XYZ" undefined company
+    1054,  # "PTony" garbled entity
+    1575,  # Niche operational trivia
+    2694,  # "XYZ" undefined company
+    3248,  # "XYZ" undefined company
+    3300,  # "Garnier" likely Garmin name error
+    3558,  # "XYZ" undefined company
+    4011,  # "XYZ" undefined company
+    4116,  # Time scope mismatch
+    5778,  # Factual error (Upjohn spinoff timing)
+    6862,  # "XYZ" undefined company
+]
+
+# additional_invalid = []
+val_bad_idxs = [
+    7,
+    26,
     85,
-    253,
-    280,
-    301,
-    178,
+    98,
+    162,
+    210,
+    242,
+    285,
+    296,
+    343,
+    404,
+    405,
+    542,
+    557,
+    616,
+    679,
+    736,
+    772,
+    817,
+    823,
+    877,
+    1017,
+    1246,
+    1440,
+    1579,
+    1597,
+    1641,
 ]
 
 

@@ -11,7 +11,7 @@ MAX_MODEL_LEN          ?= 8192
 TENSOR_PARALLEL_SIZE   ?= 1
 DATA_PARALLEL_SIZE     ?= 1
 PORT                   ?= 8000
-API_PORT               ?= 8888
+API_PORT               ?= 8889
 SERVER                 ?= localhost
 PRIME_RL_DIR           ?= prime-rl/
 
@@ -51,19 +51,19 @@ start-server:
 
 .PHONY: run-ocr
 run-ocr:
-	nohup $(MAKE) vllm-olmocr-serve >> olmocr.log 2>&1 &
+	nohup $(MAKE) vllm-olmocr-serve > olmocr.log 2>&1 &
 
 .PHONY: run-embd
 run-embd:
-	nohup $(MAKE) vllm-embd-serve >> embd.log 2>&1 &
+	nohup $(MAKE) vllm-embd-serve > embd.log 2>&1 &
 
 .PHONY: run-server
 run-server:
-	nohup $(MAKE) start-server >> server.log 2>&1 &
+	nohup $(MAKE) start-server > server.log 2>&1 &
 
 .PHONY: run-reranker
 run-reranker:
-	nohup $(MAKE) vllm-reranker-serve >> reranker.log 2>&1 &
+	nohup $(MAKE) vllm-reranker-serve > reranker.log 2>&1 &
 
 .PHONY: test
 test:
