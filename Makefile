@@ -14,18 +14,6 @@ PORT                   ?= 8000
 API_PORT               ?= 8889
 SERVER                 ?= localhost
 PRIME_RL_DIR           ?= prime-rl/
-EVAL_SCRIPT            ?= eval_retrieval.py
-EVAL_DATASET           ?= data/validation.parquet
-EVAL_TOP_K             ?= 10
-WANDB_PROJECT          ?= sec-filings-retrieval-eval
-WANDB_RUN_NAME         ?= retrieval-eval
-WANDB_ENABLED          ?= true
-
-# Retrieval evaluation defaults.
-# - BM25 models evaluate BM25 only.
-# - Dense embedding models evaluate both dense and hybrid (RRF dense+BM25).
-IS_DENSE_MODEL := $(if $(findstring Embedding,$(EMBD_MODEL)),true,false)
-EVAL_RETRIEVAL_MODES ?= $(if $(filter true,$(IS_DENSE_MODEL)),dense hybrid,bm25)
 
 .PHONY: vllm-olmocr-serve
 vllm-olmocr-serve:
@@ -84,41 +72,3 @@ test:
 .PHONY: train
 train:
 	cd $(PRIME_RL_DIR) && bash $(CURDIR)/run_train.sh
-
-.PHONY: eval
-eval:
-	@set -euo pipefail; \
-	for mode in $(EVAL_RETRIEVAL_MODES); do \
-		wandb_metric_group="$$mode"; \
-		echo "Running eval mode: $$mode"; \
-		uv run python $(EVAL_SCRIPT) \
-			--dataset $(EVAL_DATASET) \
-			--embedding-model "$(EMBD_MODEL)" \
-			--retrieval-mode "$$mode" \
-			--top-k $(EVAL_TOP_K) \
-			--wandb-enabled $(WANDB_ENABLED) \
-			--wandb-project "$(WANDB_PROJECT)" \
-			--wandb-run-name "$(WANDB_RUN_NAME)-$$mode" \
-			--wandb-metric-group "$$wandb_metric_group" \
-			$$( \
-				if [ "$$mode" = "hybrid" ]; then \
-					echo "--fusion-method rrf --hybrid-sparse-retriever bm25 --hybrid-dense-retriever embedding"; \
-				fi \
-			); \
-	done
-
-.PHONY: eval-bm25
-eval-bm25:
-	$(MAKE) eval EVAL_RETRIEVAL_MODES="bm25"
-
-.PHONY: eval-dense
-eval-dense:
-	$(MAKE) eval EVAL_RETRIEVAL_MODES="dense"
-
-.PHONY: eval-hybrid
-eval-hybrid:
-	$(MAKE) eval EVAL_RETRIEVAL_MODES="hybrid"
-
-.PHONY: eval-dual-gpu
-eval-dual-gpu:
-	bash scripts/run_retrieval_eval_dual_gpu.sh
