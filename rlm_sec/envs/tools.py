@@ -18,7 +18,7 @@ from requests.adapters import HTTPAdapter
 
 # Assistant–environment turns allowed by FinanceSearchEnv (see finance_env).
 # Ranking is single-turn; QA allows multiple search steps before <answer>.
-FINANCE_MAX_QA_TURNS = 4
+FINANCE_MAX_QA_TURNS = 6
 FINANCE_MAX_RANKING_TURNS = 1
 
 DEFAULT_TIMEOUT = 30

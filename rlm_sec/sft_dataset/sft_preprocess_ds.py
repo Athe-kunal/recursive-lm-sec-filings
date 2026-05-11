@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import random
+from collections import Counter, defaultdict
+
 from loguru import logger
 
 from datasets import Dataset, concatenate_datasets, load_dataset
@@ -30,6 +33,89 @@ def _row_is_ranking(example: dict) -> bool:
     return example["task_type"] == _RANKING_TASK
 
 
+def _normalize_qa_filing_type_row(example: dict) -> dict:
+    """Maps legacy ``10K`` labels to ``10-K`` for QA rows (tool schema alignment)."""
+    filing_type = str(example.get("filing_type", "")).strip()
+    if filing_type.upper() == "10K":
+        return {**example, "filing_type": "10-K"}
+    return example
+
+
+def _indices_by_filing_type(qa_dataset: Dataset) -> dict[str, list[int]]:
+    """Groups QA row indices by ``filing_type`` after any normalization."""
+    filing_types = qa_dataset["filing_type"]
+    indices_by_type: dict[str, list[int]] = defaultdict(list)
+    for row_index, filing_type in enumerate(filing_types):
+        key = str(filing_type).strip()
+        indices_by_type[key].append(row_index)
+    return dict(indices_by_type)
+
+
+def _stratified_qa_row_indices(
+    indices_by_type: dict[str, list[int]],
+    train_qa_n: int,
+    seed: int,
+) -> list[int]:
+    """Picks ``train_qa_n`` QA indices with near-equal counts per ``filing_type``.
+
+    Every distinct ``filing_type`` present in ``indices_by_type`` receives at least
+    one selected row when ``train_qa_n`` is at least the number of types. Shortfalls
+    from sparse types are filled from remaining rows in deterministic round-robin
+    order until ``train_qa_n`` rows are chosen or the pool is exhausted.
+    """
+    rng = random.Random(seed)
+    types_sorted = sorted(indices_by_type.keys())
+    num_types = len(types_sorted)
+    if num_types == 0:
+        raise ValueError("No QA rows with filing_type after normalization.")
+    if train_qa_n < num_types:
+        raise ValueError(
+            f"{train_qa_n=} must be >= {num_types=} (distinct filing_type values) "
+            "so each filing_type can appear at least once in the QA sample."
+        )
+
+    base_quota = train_qa_n // num_types
+    remainder = train_qa_n % num_types
+    shuffled_types = types_sorted[:]
+    rng.shuffle(shuffled_types)
+    quota_by_type = {t: base_quota for t in types_sorted}
+    for filing_type in shuffled_types[:remainder]:
+        quota_by_type[filing_type] += 1
+
+    selected: list[int] = []
+    leftovers_by_type: dict[str, list[int]] = {}
+    for filing_type in types_sorted:
+        pool = indices_by_type[filing_type][:]
+        rng.shuffle(pool)
+        take_n = min(quota_by_type[filing_type], len(pool))
+        selected.extend(pool[:take_n])
+        leftovers_by_type[filing_type] = pool[take_n:]
+
+    shortfall = train_qa_n - len(selected)
+    cycle_order = shuffled_types[:]
+    while shortfall > 0:
+        progressed = False
+        for filing_type in cycle_order:
+            if shortfall <= 0:
+                break
+            bucket = leftovers_by_type[filing_type]
+            if not bucket:
+                continue
+            selected.append(bucket.pop())
+            shortfall -= 1
+            progressed = True
+        if not progressed:
+            break
+
+    if len(selected) != train_qa_n:
+        raise ValueError(
+            f"Stratified QA sampling failed: need {train_qa_n=} rows, "
+            f"selected {len(selected)=}. Check QA pool size and quotas."
+        )
+    rng.shuffle(selected)
+    return selected
+
+
 def load_sft_dataset(
     train_path: str = _DEFAULT_TRAIN_PATH,
     seed: int = 46,
@@ -38,8 +124,12 @@ def load_sft_dataset(
 ) -> Dataset:
     """Load parquet train data and build a subsampled train dataset.
 
-    The full train parquet is filtered by ``task_type``, shuffled with ``seed``,
-    and the first ``train_qa_n`` / ``train_ranking_n`` rows are taken per task.
+    QA rows: ``filing_type`` ``10K`` is normalized to ``10-K``, then ``train_qa_n``
+    rows are chosen with stratified sampling so every ``filing_type`` in the QA
+    pool is represented and counts per type are as equal as the row counts allow.
+
+    Ranking rows: filtered, shuffled with ``seed + 1``, and the first
+    ``train_ranking_n`` rows are taken.
 
     Args:
         train_path: Path to the training parquet file.
@@ -54,7 +144,7 @@ def load_sft_dataset(
 
     full_train = load_dataset("parquet", data_files=train_path)["train"]
 
-    qa_train = full_train.filter(_row_is_qa)
+    qa_train = full_train.filter(_row_is_qa).map(_normalize_qa_filing_type_row)
     ranking_train = full_train.filter(_row_is_ranking)
 
     logger.info(f"{len(qa_train)=}, {len(ranking_train)=}")
@@ -69,7 +159,21 @@ def load_sft_dataset(
             f"{train_ranking_n}, have {len(ranking_train)}"
         )
 
-    qa_sample = qa_train.shuffle(seed=seed).select(range(train_qa_n))
+    indices_by_type = _indices_by_filing_type(qa_train)
+    pool_sizes_by_type = {k: len(v) for k, v in indices_by_type.items()}
+    logger.info(f"{sorted(indices_by_type.keys())=} {pool_sizes_by_type=}")
+    qa_indices = _stratified_qa_row_indices(
+        indices_by_type=indices_by_type,
+        train_qa_n=train_qa_n,
+        seed=seed,
+    )
+    qa_sample = qa_train.select(qa_indices)
+    filing_type_column = qa_train["filing_type"]
+    per_type_selected = Counter(
+        str(filing_type_column[i]).strip() for i in qa_indices
+    )
+    logger.info(f"{dict(per_type_selected)=}")
+
     ranking_sample = ranking_train.shuffle(seed=seed + 1).select(range(train_ranking_n))
 
     train_sft_dataset = concatenate_datasets([qa_sample, ranking_sample]).shuffle(
@@ -126,7 +230,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=44)
     parser.add_argument("--train_qa_n", type=int, default=_DEFAULT_TRAIN_QA_N)
     parser.add_argument("--train_ranking_n", type=int, default=_DEFAULT_TRAIN_RANKING_N)
-    parser.add_argument("--rollout_output_jsonl_path", default="sft_data_n4.jsonl")
+    parser.add_argument("--rollout_output_jsonl_path", default="sft_data_full.jsonl")
     parser.add_argument("--model", default="gpt-4o-mini")
     parser.add_argument("--rollout_temperature", type=float, default=1.0)
     parser.add_argument("--continuation_temperature", type=float, default=0.7)
